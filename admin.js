@@ -4,6 +4,7 @@ const countEl = document.querySelector("[data-admin-count]");
 const storageModeEl = document.querySelector("[data-storage-mode]");
 const updatedEl = document.querySelector("[data-admin-updated]");
 const messageEl = document.querySelector("[data-admin-message]");
+const warningEl = document.querySelector("[data-admin-warning]");
 const formatter = new Intl.NumberFormat("mn-MN");
 
 function money(value) {
@@ -75,6 +76,7 @@ function renderOrders(data) {
   const orders = data.orders || [];
   countEl.textContent = orders.length;
   storageModeEl.textContent = data.storageMode === "redis" ? "Database холбогдсон" : "Түр хадгалалт";
+  warningEl.hidden = data.storageMode === "redis";
   updatedEl.textContent = new Date().toLocaleTimeString("mn-MN");
   messageEl.textContent = orders.length
     ? "Захиалгын жагсаалт шинэчлэгдлээ."
