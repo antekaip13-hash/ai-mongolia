@@ -79,6 +79,7 @@ const cartDrawer = document.querySelector("[data-cart-drawer]");
 const cartItems = document.querySelector("[data-cart-items]");
 const cartTotal = document.querySelector("[data-cart-total]");
 const cartCount = document.querySelector("[data-cart-count]");
+const copyResult = document.querySelector("[data-copy-result]");
 const mobileCartTotal = document.querySelector("[data-mobile-cart-total]");
 const filterButtons = document.querySelectorAll("[data-filter]");
 const searchInput = document.querySelector("[data-search]");
@@ -325,6 +326,20 @@ function buildOrderText(formData) {
   ].filter(Boolean).join("\n");
 }
 
+function showCopyText(text, copied = false) {
+  copyResult.innerHTML = `
+    <div class="copy-box">
+      <strong>${copied ? "Захиалга clipboard-д хуулагдлаа." : "Доорх захиалгын текстийг хуулж илгээнэ үү."}</strong>
+      <textarea readonly rows="7">${text}</textarea>
+      <small>Ctrl + A дараад Ctrl + C дарж хуулж болно.</small>
+    </div>
+  `;
+
+  const textarea = copyResult.querySelector("textarea");
+  textarea.focus();
+  textarea.select();
+}
+
 function copyOrder() {
   if (!cart.length) {
     showToast("Сагс хоосон байна.");
@@ -334,17 +349,19 @@ function copyOrder() {
   const text = buildOrderText();
 
   if (!navigator.clipboard) {
-    window.prompt("Захиалгын текстээ хуулна уу:", text);
+    showCopyText(text);
     return;
   }
 
   navigator.clipboard
     .writeText(text)
     .then(() => {
+      showCopyText(text, true);
       showToast("Захиалга clipboard-д хуулагдлаа.");
     })
     .catch(() => {
-      window.prompt("Захиалгын текстээ хуулна уу:", text);
+      showCopyText(text);
+      showToast("Clipboard зөвшөөрөл хаалттай байна. Текстийг гараар хуулна уу.");
     });
 }
 

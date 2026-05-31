@@ -995,6 +995,36 @@ body[data-theme="night"] .idea-card span {
   font-size: 20px;
 }
 
+.copy-result:empty {
+  display: none;
+}
+
+.copy-box {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--wash);
+}
+
+.copy-box textarea {
+  width: 100%;
+  padding: 12px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.copy-box small {
+  color: var(--muted);
+  font-weight: 800;
+}
+
 .full-width {
   width: 100%;
 }
