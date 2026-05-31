@@ -33,6 +33,29 @@ Vercel дээр `/api` folder автоматаар serverless functions болж
 - `/api/create-order`: cart + customer мэдээллээр order ID болон төлбөрийн нэхэмжлэх үүсгэнэ
 - `/api/order-status`: order ID-р төлөв, progress, timeline буцаана
 - `/api/ideas`: хэрэглэгчийн санал авах route
+- `/api/admin-orders`: admin dashboard-д захиалга жагсаах, төлөв солих route
+
+## Admin dashboard
+
+Admin хуудас:
+
+```text
+/admin.html
+```
+
+Vercel дээр `ADMIN_PIN` env нэмбэл admin API PIN шаардана. PIN тавиагүй үед dashboard нээлттэй тул production ашиглалтад заавал PIN тохируулах хэрэгтэй.
+
+## Database тохиргоо
+
+Захиалгыг бодитоор хадгалахын тулд Vercel KV эсвэл Upstash Redis REST credential тохируулна.
+
+```text
+KV_REST_API_URL=...
+KV_REST_API_TOKEN=...
+ADMIN_PIN=...
+```
+
+Env байхгүй үед API түр хадгалалтаар ажиллана. Энэ нь хөгжүүлэлтэд тохиромжтой, production захиалгад database заавал хэрэгтэй.
 
 ## Одоогийн боломжууд
 

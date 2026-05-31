@@ -1,3 +1,5 @@
 screenshots/
 assets/shop-hero.png
-
+.env
+.env.local
+.env.production

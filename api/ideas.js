@@ -1,3 +1,5 @@
+import { addIdea, listIdeas } from "./_store.js";
+
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let body = "";
@@ -44,7 +46,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method === "GET") {
-    res.status(200).json({ ok: true, ideas: starterIdeas });
+    res.status(200).json({ ok: true, ideas: await listIdeas(starterIdeas) });
     return;
   }
 
@@ -63,14 +65,15 @@ export default async function handler(req, res) {
       return;
     }
 
+    const idea = await addIdea({
+      title,
+      tag,
+      votes: 1
+    });
+
     res.status(200).json({
       ok: true,
-      idea: {
-        title,
-        tag,
-        votes: 1,
-        receivedAt: new Date().toISOString()
-      },
+      idea,
       note: "Таны санал хүлээн авлаа."
     });
   } catch (error) {

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="mn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Mongolia | Admin</title>
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-theme="day">
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="AI Mongolia нүүр хуудас">
+      <img class="brand-logo" src="assets/ai-mongolia-logo.svg" alt="AI Mongolia logo">
+      <span class="brand-name">AI Mongolia Admin</span>
+    </a>
+    <nav class="nav-links" aria-label="Admin цэс">
+      <a href="/">Дэлгүүр</a>
+      <a href="#orders">Захиалгууд</a>
+    </nav>
+  </header>
+
+  <main class="admin-page" id="orders">
+    <section class="admin-hero">
+      <div>
+        <p class="eyebrow">Admin dashboard</p>
+        <h1>Захиалгын удирдлага</h1>
+        <p>Сайт дээр бүртгэгдсэн захиалгуудыг харж, төлөвийг нь шинэчилнэ. Жинхэнэ хадгалалт ажиллуулахын тулд Vercel дээр KV/Redis env тохируулна.</p>
+      </div>
+      <form class="admin-toolbar" data-admin-form>
+        <label>
+          Admin PIN
+          <input type="password" name="pin" placeholder="Хэрэв тохируулсан бол PIN оруулна">
+        </label>
+        <button class="primary-action" type="submit">Захиалга шинэчлэх</button>
+      </form>
+    </section>
+
+    <section class="admin-summary" aria-label="Admin үзүүлэлт">
+      <div>
+        <span>Нийт захиалга</span>
+        <strong data-admin-count>0</strong>
+      </div>
+      <div>
+        <span>Хадгалалтын горим</span>
+        <strong data-storage-mode>Уншиж байна</strong>
+      </div>
+      <div>
+        <span>Сүүлийн шинэчлэлт</span>
+        <strong data-admin-updated>-</strong>
+      </div>
+    </section>
+
+    <section class="admin-orders">
+      <div class="admin-orders-head">
+        <h2>Захиалгууд</h2>
+        <p data-admin-message>Захиалгын мэдээлэл уншиж байна...</p>
+      </div>
+      <div class="admin-order-list" data-admin-orders></div>
+    </section>
+  </main>
+
+  <script src="admin.js"></script>
+</body>
+</html>

@@ -1,28 +1,14 @@
-const statuses = [
-  {
-    key: "pending_payment",
-    label: "Төлбөр хүлээгдэж байна",
-    progress: 35
-  },
-  {
-    key: "activation_queue",
-    label: "Эрх идэвхжүүлэх дараалалд орсон",
-    progress: 68
-  },
-  {
-    key: "ready",
-    label: "Эрх бэлэн болсон",
-    progress: 100
-  }
-];
+import { buildTimeline, getOrder, getStatusMeta, publicOrder } from "./_store.js";
+
+const statuses = ["pending_payment", "activation_queue", "ready"];
 
 function pickStatus(orderId) {
   const text = String(orderId || "");
   const sum = text.split("").reduce((value, char) => value + char.charCodeAt(0), 0);
-  return statuses[sum % statuses.length];
+  return getStatusMeta(statuses[sum % statuses.length]);
 }
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
 
   if (req.method !== "GET") {
@@ -37,6 +23,13 @@ export default function handler(req, res) {
     return;
   }
 
+  const savedOrder = await getOrder(orderId);
+
+  if (savedOrder) {
+    res.status(200).json(publicOrder(savedOrder));
+    return;
+  }
+
   const status = pickStatus(orderId);
 
   res.status(200).json({
@@ -45,11 +38,6 @@ export default function handler(req, res) {
     status: status.key,
     label: status.label,
     progress: status.progress,
-    timeline: [
-      { label: "Захиалга бүртгэгдсэн", done: true },
-      { label: "Төлбөр шалгаж байна", done: status.progress >= 35 },
-      { label: "Эрх идэвхжүүлэлт эхэлсэн", done: status.progress >= 68 },
-      { label: "Эрхийн мэдээлэл илгээгдсэн", done: status.progress >= 100 }
-    ]
+    timeline: buildTimeline(status.key)
   });
 };

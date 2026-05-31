@@ -1,3 +1,5 @@
+import { saveOrder } from "./_store.js";
+
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let body = "";
@@ -53,11 +55,15 @@ export default async function handler(req, res) {
     }
 
     const orderId = makeOrderId();
-
-    res.status(200).json({
-      ok: true,
+    const order = await saveOrder({
       orderId,
       status: "pending_payment",
+      customer: {
+        name: customer.name,
+        phone: customer.phone,
+        note: customer.note || ""
+      },
+      items,
       total,
       payment: {
         provider: "invoice",
@@ -65,6 +71,15 @@ export default async function handler(req, res) {
         qrText: `invoice://order/${orderId}`,
         expiresInMinutes: 15
       },
+      createdAt: new Date().toISOString()
+    });
+
+    res.status(200).json({
+      ok: true,
+      orderId: order.orderId,
+      status: order.status,
+      total: order.total,
+      payment: order.payment,
       nextSteps: [
         "Төлбөрийн нэхэмжлэх үүссэн",
         "Төлбөр баталгаажмагц эрх идэвхжүүлэлт эхэлнэ",
