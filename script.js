@@ -4,40 +4,72 @@ const products = [
     name: "Canva Pro",
     category: "Design",
     price: 29900,
-    description: "Social post, poster, presentation хийхэд зориулсан design subscription.",
+    term: "1 сарын эрх",
+    description: "Social post, poster, presentation хийхэд тохиромжтой design subscription.",
+    benefits: ["Premium template", "Brand kit workflow", "Монгол заавар"],
     rating: "4.9",
     stock: "Activation",
-    color: "linear-gradient(135deg, #00c4cc, #7d2ae8)"
+    color: "linear-gradient(135deg, #00b8c4, #7b4ac8)"
   },
   {
     id: "capcut-pro",
     name: "CapCut Pro",
     category: "Video",
     price: 34900,
-    description: "Short video, reels, TikTok edit хийх creator-д зориулсан video tool.",
+    term: "1 сарын эрх",
+    description: "Reels, TikTok, short video edit хийдэг creator-д зориулсан video tool.",
+    benefits: ["Pro effects", "Cloud export", "Creator setup"],
     rating: "4.8",
     stock: "Activation",
-    color: "linear-gradient(135deg, #101614, #54c99e)"
+    color: "linear-gradient(135deg, #111816, #56c99e)"
   },
   {
     id: "ai-creator-pack",
     name: "AI Creator Pack",
     category: "AI Tools",
     price: 49900,
-    description: "Prompt, content idea, caption, ad copy гаргах AI workflow багц.",
+    term: "Prompt workflow",
+    description: "Content idea, caption, ad copy, product text гаргах AI workflow багц.",
+    benefits: ["Prompt guide", "Ad copy template", "Content calendar"],
     rating: "5.0",
     stock: "Guide included",
-    color: "linear-gradient(135deg, #3e6f8e, #54c99e)"
+    color: "linear-gradient(135deg, #386f8e, #56c99e)"
   },
   {
     id: "design-video-bundle",
     name: "Design + Video Bundle",
     category: "Bundle",
     price: 59900,
-    description: "Canva style design болон video editing хэрэгцээг нэг багцад.",
+    term: "Best value",
+    description: "Design болон video editing хэрэгцээг нэг багцад шийдэх creator bundle.",
+    benefits: ["Canva workflow", "CapCut workflow", "Priority support"],
     rating: "4.9",
-    stock: "Best value",
-    color: "linear-gradient(135deg, #ff8a68, #f4c45d)"
+    stock: "Bundle deal",
+    color: "linear-gradient(135deg, #e56f4e, #c98b20)"
+  },
+  {
+    id: "business-starter",
+    name: "Business Starter Kit",
+    category: "Bundle",
+    price: 79900,
+    term: "Launch pack",
+    description: "Facebook page, poster, caption, product listing эхлүүлэх жижиг бизнесийн багц.",
+    benefits: ["Page content", "Poster template", "Sales copy"],
+    rating: "4.9",
+    stock: "New",
+    color: "linear-gradient(135deg, #14775c, #386f8e)"
+  },
+  {
+    id: "ai-ads-pack",
+    name: "AI Ads Pack",
+    category: "AI Tools",
+    price: 39900,
+    term: "Ad workflow",
+    description: "Зар сурталчилгааны headline, primary text, offer idea гаргах AI багц.",
+    benefits: ["Ad prompts", "Offer angles", "Testing checklist"],
+    rating: "4.8",
+    stock: "Fast setup",
+    color: "linear-gradient(135deg, #6b5a8f, #e56f4e)"
   }
 ];
 
@@ -51,9 +83,11 @@ const mobileCartTotal = document.querySelector("[data-mobile-cart-total]");
 const filterButtons = document.querySelectorAll("[data-filter]");
 const searchInput = document.querySelector("[data-search]");
 const themeButtons = document.querySelectorAll("[data-theme-option]");
+const toast = document.querySelector("[data-toast]");
 let activeFilter = "all";
 let cart = loadCart();
 let activeTheme = loadTheme();
+let toastTimer;
 
 function money(value) {
   return `${formatter.format(value)}₮`;
@@ -103,16 +137,27 @@ function setTheme(theme) {
   saveTheme(theme);
 }
 
+function showToast(message) {
+  if (!toast) return;
+  toast.textContent = message;
+  toast.classList.add("is-visible");
+  window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => {
+    toast.classList.remove("is-visible");
+  }, 2400);
+}
+
 function renderProducts() {
   const searchTerm = searchInput.value.trim().toLowerCase();
   const visibleProducts = products.filter((product) => {
+    const haystack = `${product.name} ${product.category} ${product.description} ${product.benefits.join(" ")}`.toLowerCase();
     const matchesFilter = activeFilter === "all" || product.category === activeFilter;
-    const matchesSearch = !searchTerm || `${product.name} ${product.category}`.toLowerCase().includes(searchTerm);
+    const matchesSearch = !searchTerm || haystack.includes(searchTerm);
     return matchesFilter && matchesSearch;
   });
 
   if (!visibleProducts.length) {
-    grid.innerHTML = "<p class=\"cart-note\">Таны хайлтад тохирох subscription олдсонгүй.</p>";
+    grid.innerHTML = '<p class="cart-note">Таны хайлтад тохирох subscription олдсонгүй.</p>';
     return;
   }
 
@@ -123,11 +168,14 @@ function renderProducts() {
       </div>
       <div class="product-body">
         <div class="product-meta">
-          <span class="category">${product.category}</span>
+          <span class="category">${product.term}</span>
           <span class="price">${money(product.price)}</span>
         </div>
         <h3>${product.name}</h3>
         <p>${product.description}</p>
+        <ul class="product-benefits">
+          ${product.benefits.map((benefit) => `<li>${benefit}</li>`).join("")}
+        </ul>
         <div class="rating" aria-label="${product.rating} үнэлгээ">
           <span>★ ${product.rating}</span>
           <span>${product.stock}</span>
@@ -150,7 +198,7 @@ function renderCart() {
   mobileCartTotal.textContent = totalQuantity ? `${totalQuantity} эрх · ${money(totalPrice)}` : "0₮";
 
   if (!cart.length) {
-    cartItems.innerHTML = "<p class=\"cart-note\">Сагс хоосон байна.</p>";
+    cartItems.innerHTML = '<p class="cart-note">Сагс хоосон байна.</p>';
     return;
   }
 
@@ -158,12 +206,12 @@ function renderCart() {
     <div class="cart-row">
       <div>
         <strong>${item.name}</strong>
-        <small>${money(item.price)} x ${item.quantity}</small>
+        <small>${item.term} · ${money(item.price)} x ${item.quantity}</small>
       </div>
       <div class="qty" aria-label="${item.name} тоо ширхэг">
-        <button type="button" data-decrease="${item.id}">-</button>
+        <button type="button" data-decrease="${item.id}" aria-label="${item.name} хасах">-</button>
         <span>${item.quantity}</span>
-        <button type="button" data-increase="${item.id}">+</button>
+        <button type="button" data-increase="${item.id}" aria-label="${item.name} нэмэх">+</button>
       </div>
     </div>
   `).join("");
@@ -181,7 +229,7 @@ function addToCart(productId) {
 
   saveCart();
   renderCart();
-  openCart();
+  showToast(`${product.name} сагсанд нэмэгдлээ.`);
 }
 
 function changeQuantity(productId, amount) {
@@ -203,15 +251,31 @@ function closeCart() {
   cartDrawer.setAttribute("aria-hidden", "true");
 }
 
+function buildOrderText(formData) {
+  const lines = cart.map((item) => `- ${item.name} (${item.term}): ${item.quantity}ш x ${money(item.price)}`);
+  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const customer = formData ? [
+    `Нэр: ${formData.get("name")}`,
+    `Холбоо барих: ${formData.get("phone")}`,
+    `Тайлбар: ${formData.get("note") || "-"}`
+  ].join("\n") : "";
+
+  return [
+    "Сайн байна уу, AI Mongolia-с дараах digital subscription захиалъя:",
+    customer,
+    "Захиалга:",
+    lines.join("\n") || "- Сагс хоосон",
+    `Нийт: ${money(total)}`
+  ].filter(Boolean).join("\n");
+}
+
 function copyOrder() {
   if (!cart.length) {
-    alert("Сагс хоосон байна.");
+    showToast("Сагс хоосон байна.");
     return;
   }
 
-  const lines = cart.map((item) => `- ${item.name}: ${item.quantity}ш x ${money(item.price)}`);
-  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const text = `Сайн байна уу, AI Mongolia-с дараах digital subscription захиалъя:\n${lines.join("\n")}\nНийт: ${money(total)}`;
+  const text = buildOrderText();
 
   if (!navigator.clipboard) {
     window.prompt("Захиалгын текстээ хуулна уу:", text);
@@ -219,7 +283,7 @@ function copyOrder() {
   }
 
   navigator.clipboard.writeText(text).then(() => {
-    alert("Захиалга clipboard-д хуулагдлаа.");
+    showToast("Захиалга clipboard-д хуулагдлаа.");
   });
 }
 
@@ -264,12 +328,8 @@ searchInput.addEventListener("input", renderProducts);
 document.querySelector("[data-order-form]").addEventListener("submit", (event) => {
   event.preventDefault();
   const formData = new FormData(event.currentTarget);
-  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const orderLines = cart.map((item) => `${item.name} - ${item.quantity}ш`).join("\n");
   const subject = encodeURIComponent("AI Mongolia digital subscription захиалга");
-  const body = encodeURIComponent(
-    `Нэр: ${formData.get("name")}\nХолбоо барих: ${formData.get("phone")}\nТайлбар: ${formData.get("address")}\n\nЗахиалга:\n${orderLines || "Сагс хоосон"}\n\nНийт: ${money(total)}`
-  );
+  const body = encodeURIComponent(buildOrderText(formData));
   window.location.href = `mailto:orders@example.com?subject=${subject}&body=${body}`;
 });
 
