@@ -1,0 +1,77 @@
+function readBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
+    req.on("end", () => {
+      try {
+        resolve(body ? JSON.parse(body) : {});
+      } catch (error) {
+        reject(error);
+      }
+    });
+    req.on("error", reject);
+  });
+}
+
+function makeOrderId() {
+  const stamp = Date.now().toString(36).toUpperCase();
+  const random = Math.random().toString(36).slice(2, 7).toUpperCase();
+  return `AIM-${stamp}-${random}`;
+}
+
+export default async function handler(req, res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+
+  if (req.method !== "POST") {
+    res.status(405).json({ error: "Method not allowed" });
+    return;
+  }
+
+  try {
+    const payload = await readBody(req);
+    const items = Array.isArray(payload.items) ? payload.items : [];
+    const customer = payload.customer || {};
+    const total = items.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0);
+
+    if (!items.length) {
+      res.status(400).json({ error: "Cart is empty" });
+      return;
+    }
+
+    if (!customer.name || !customer.phone) {
+      res.status(400).json({ error: "Customer name and contact are required" });
+      return;
+    }
+
+    const orderId = makeOrderId();
+
+    res.status(200).json({
+      ok: true,
+      orderId,
+      status: "pending_payment",
+      total,
+      payment: {
+        provider: "qpay-demo",
+        invoiceId: `DEMO-${orderId}`,
+        qrText: `qpay://invoice/${orderId}`,
+        expiresInMinutes: 15
+      },
+      nextSteps: [
+        "Төлбөрийн invoice үүссэн",
+        "Төлбөр баталгаажмагц activation эхэлнэ",
+        "Эрхийн мэдээлэл customer contact руу илгээгдэнэ"
+      ]
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Could not create order" });
+  }
+};

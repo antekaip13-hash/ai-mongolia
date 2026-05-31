@@ -1,26 +1,47 @@
-# AI Mongolia demo
+# AI Mongolia
 
-Digital product болон subscription зарах demo website.
+Digital subscription store + backend-ready commerce engine.
 
 ## Ажиллуулах
 
-`http://127.0.0.1:8081/` дээр local server ажиллаж байгаа үед browser дээр нээгдэнэ.
+Local static preview:
+
+```bash
+python -m http.server 8081
+```
+
+Browser дээр:
+
+```text
+http://127.0.0.1:8081/
+```
+
+Vercel дээр `/api` folder автоматаар serverless functions болж deploy хийгдэнэ.
 
 ## Засах гол хэсгүүд
 
-- Subscription бүтээгдэхүүнүүд: `script.js` доторх `products` массив
-- Утас, email, Facebook link: `index.html` доторх `contact-section`
+- Бүтээгдэхүүнүүд: `script.js` доторх `products` массив
+- Нүүр, section layout: `index.html`
+- Өнгө, responsive design: `styles.css`
+- Backend endpoint-үүд: `api/`
 - Logo: `assets/ai-mongolia-logo.svg`
 - Hero visual: `assets/digital-hero.svg`
-- Өнгө, layout: `styles.css`
 - Сурталчилгааны copy: `marketing-plan.md`
 
-## Одоо байгаа боломжууд
+## Backend mechanics
 
-- AI Mongolia branding + SVG logo
-- Digital subscription product catalog
+- `/api/create-order`: cart + customer мэдээллээр order ID болон demo QPay invoice үүсгэнэ
+- `/api/order-status`: order ID-р төлөв, progress, timeline буцаана
+- `/api/ideas`: community brainstorm board-ийн санаа авах demo endpoint
+
+## Одоогийн боломжууд
+
+- Digital subscription catalog
 - Search болон category filter
+- Smart bundle recommendation quiz
 - Cart drawer, quantity нэмэх/хасах
-- Захиалга clipboard-д хуулах
-- Email draft үүсгэх contact form
+- Backend-ready order ID creation
+- Demo QPay invoice response
+- Order tracking UI
+- Community brainstorm board
 - Day Shift / Night Shift mode

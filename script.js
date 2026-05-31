@@ -84,10 +84,15 @@ const filterButtons = document.querySelectorAll("[data-filter]");
 const searchInput = document.querySelector("[data-search]");
 const themeButtons = document.querySelectorAll("[data-theme-option]");
 const toast = document.querySelector("[data-toast]");
+const recommendationResult = document.querySelector("[data-recommendation-result]");
+const statusResult = document.querySelector("[data-status-result]");
+const orderResult = document.querySelector("[data-order-result]");
+const ideaBoard = document.querySelector("[data-idea-board]");
 let activeFilter = "all";
 let cart = loadCart();
 let activeTheme = loadTheme();
 let toastTimer;
+let ideas = loadIdeas();
 
 function money(value) {
   return `${formatter.format(value)}₮`;
@@ -104,6 +109,22 @@ function loadCart() {
 function saveCart() {
   try {
     window.localStorage?.setItem("ai-mongolia-cart", JSON.stringify(cart));
+  } catch {
+    return;
+  }
+}
+
+function loadIdeas() {
+  try {
+    return JSON.parse(window.localStorage?.getItem("ai-mongolia-ideas") || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function saveIdeas() {
+  try {
+    window.localStorage?.setItem("ai-mongolia-ideas", JSON.stringify(ideas));
   } catch {
     return;
   }
@@ -145,6 +166,38 @@ function showToast(message) {
   toastTimer = window.setTimeout(() => {
     toast.classList.remove("is-visible");
   }, 2400);
+}
+
+async function postJson(url, payload) {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || "Request failed");
+  }
+
+  return response.json();
+}
+
+function makeDemoOrder(payload) {
+  const stamp = Date.now().toString(36).toUpperCase();
+  const total = payload.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  return {
+    ok: true,
+    orderId: `AIM-DEMO-${stamp}`,
+    status: "pending_payment",
+    total,
+    payment: {
+      provider: "local-demo",
+      invoiceId: `LOCAL-${stamp}`,
+      qrText: `qpay://invoice/AIM-DEMO-${stamp}`,
+      expiresInMinutes: 15
+    }
+  };
 }
 
 function renderProducts() {
@@ -206,7 +259,7 @@ function renderCart() {
     <div class="cart-row">
       <div>
         <strong>${item.name}</strong>
-        <small>${item.term} · ${money(item.price)} x ${item.quantity}</small>
+        <small>${item.term || item.category} · ${money(item.price)} x ${item.quantity}</small>
       </div>
       <div class="qty" aria-label="${item.name} тоо ширхэг">
         <button type="button" data-decrease="${item.id}" aria-label="${item.name} хасах">-</button>
@@ -252,7 +305,7 @@ function closeCart() {
 }
 
 function buildOrderText(formData) {
-  const lines = cart.map((item) => `- ${item.name} (${item.term}): ${item.quantity}ш x ${money(item.price)}`);
+  const lines = cart.map((item) => `- ${item.name} (${item.term || item.category}): ${item.quantity}ш x ${money(item.price)}`);
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const customer = formData ? [
     `Нэр: ${formData.get("name")}`,
@@ -282,9 +335,133 @@ function copyOrder() {
     return;
   }
 
-  navigator.clipboard.writeText(text).then(() => {
-    showToast("Захиалга clipboard-д хуулагдлаа.");
-  });
+  navigator.clipboard
+    .writeText(text)
+    .then(() => {
+      showToast("Захиалга clipboard-д хуулагдлаа.");
+    })
+    .catch(() => {
+      window.prompt("Захиалгын текстээ хуулна уу:", text);
+    });
+}
+
+function recommendBundle(goal, budget) {
+  if (goal === "business") return products.find((product) => product.id === "business-starter");
+  if (goal === "video") return budget === "starter"
+    ? products.find((product) => product.id === "capcut-pro")
+    : products.find((product) => product.id === "design-video-bundle");
+  if (goal === "ads") return products.find((product) => product.id === "ai-ads-pack");
+  if (budget === "pro") return products.find((product) => product.id === "design-video-bundle");
+  return products.find((product) => product.id === "canva-pro");
+}
+
+function renderRecommendation(product) {
+  recommendationResult.innerHTML = `
+    <strong>${product.name}</strong>
+    <span>${product.description}</span>
+    <button class="add-button" type="button" data-recommend-add="${product.id}">Санал болгосныг сагслах</button>
+  `;
+}
+
+function renderStatus(data) {
+  const timeline = (data.timeline || []).map((item) => `
+    <li class="${item.done ? "is-done" : ""}">${item.label}</li>
+  `).join("");
+
+  statusResult.innerHTML = `
+    <span class="status-pill">${data.label || data.status}</span>
+    <div class="progress-track"><span style="width: ${Number(data.progress || 35)}%"></span></div>
+    <p><strong>${data.orderId}</strong> захиалгын төлөв шинэчлэгдлээ.</p>
+    <ul class="status-timeline">${timeline}</ul>
+  `;
+}
+
+async function checkOrderStatus(orderId) {
+  try {
+    const response = await fetch(`/api/order-status?orderId=${encodeURIComponent(orderId)}`);
+    if (!response.ok) throw new Error("Status unavailable");
+    return response.json();
+  } catch {
+    return {
+      ok: true,
+      orderId,
+      label: "Local demo төлөв",
+      progress: 35,
+      timeline: [
+        { label: "Захиалга бүртгэгдсэн", done: true },
+        { label: "Төлбөр шалгаж байна", done: true },
+        { label: "Activation эхлээгүй", done: false },
+        { label: "Delivery хүлээгдэж байна", done: false }
+      ]
+    };
+  }
+}
+
+async function createOrder(formData) {
+  const payload = {
+    customer: {
+      name: formData.get("name"),
+      phone: formData.get("phone"),
+      note: formData.get("note")
+    },
+    items: cart.map((item) => ({
+      id: item.id,
+      name: item.name,
+      term: item.term || item.category,
+      price: item.price,
+      quantity: item.quantity
+    }))
+  };
+
+  try {
+    return await postJson("/api/create-order", payload);
+  } catch {
+    return makeDemoOrder(payload);
+  }
+}
+
+function renderOrderResult(data) {
+  orderResult.innerHTML = `
+    <div class="order-success">
+      <span class="status-pill">Order created</span>
+      <strong>${data.orderId}</strong>
+      <p>Demo invoice: ${data.payment?.invoiceId || "QPay pending"} · Нийт ${money(data.total || 0)}</p>
+      <button class="secondary-action" type="button" data-track-created="${data.orderId}">Төлөв шалгах</button>
+    </div>
+  `;
+}
+
+function renderIdeas() {
+  const sorted = [...ideas].sort((a, b) => b.votes - a.votes);
+  ideaBoard.innerHTML = sorted.map((idea) => `
+    <article class="idea-card">
+      <span>${idea.tag}</span>
+      <strong>${idea.title}</strong>
+      <button type="button" data-vote="${idea.title}">▲ ${idea.votes}</button>
+    </article>
+  `).join("");
+}
+
+async function loadStarterIdeas() {
+  try {
+    const response = await fetch("/api/ideas");
+    if (!response.ok) throw new Error("Ideas unavailable");
+    const data = await response.json();
+    const remoteIdeas = data.ideas || [];
+    const merged = [...remoteIdeas, ...ideas];
+    const unique = new Map(merged.map((idea) => [idea.title, idea]));
+    ideas = [...unique.values()];
+  } catch {
+    if (!ideas.length) {
+      ideas = [
+        { title: "AI Prompt Store", votes: 42, tag: "AI Tools" },
+        { title: "QPay Auto Invoice", votes: 36, tag: "Payment" },
+        { title: "Renewal Reminder Bot", votes: 28, tag: "Automation" }
+      ];
+    }
+  }
+  saveIdeas();
+  renderIdeas();
 }
 
 grid.addEventListener("click", (event) => {
@@ -325,14 +502,79 @@ themeButtons.forEach((button) => {
 
 searchInput.addEventListener("input", renderProducts);
 
-document.querySelector("[data-order-form]").addEventListener("submit", (event) => {
+document.querySelector("[data-recommender-form]").addEventListener("submit", (event) => {
   event.preventDefault();
   const formData = new FormData(event.currentTarget);
-  const subject = encodeURIComponent("AI Mongolia digital subscription захиалга");
-  const body = encodeURIComponent(buildOrderText(formData));
-  window.location.href = `mailto:orders@example.com?subject=${subject}&body=${body}`;
+  renderRecommendation(recommendBundle(formData.get("goal"), formData.get("budget")));
+});
+
+recommendationResult.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-recommend-add]");
+  if (button) addToCart(button.dataset.recommendAdd);
+});
+
+document.querySelector("[data-status-form]").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const formData = new FormData(event.currentTarget);
+  const orderId = formData.get("orderId");
+  renderStatus(await checkOrderStatus(orderId));
+});
+
+orderResult.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-track-created]");
+  if (!button) return;
+  renderStatus(await checkOrderStatus(button.dataset.trackCreated));
+  document.querySelector("#engine").scrollIntoView({ behavior: "smooth" });
+});
+
+document.querySelector("[data-idea-form]").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const formData = new FormData(form);
+  const idea = {
+    title: formData.get("title").trim(),
+    tag: formData.get("tag"),
+    votes: 1
+  };
+
+  try {
+    const data = await postJson("/api/ideas", idea);
+    ideas = [data.idea, ...ideas];
+  } catch {
+    ideas = [idea, ...ideas];
+  }
+
+  saveIdeas();
+  renderIdeas();
+  form.reset();
+  showToast("Санаа brainstorm board-д нэмэгдлээ.");
+});
+
+ideaBoard.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-vote]");
+  if (!button) return;
+  ideas = ideas.map((idea) => idea.title === button.dataset.vote ? { ...idea, votes: idea.votes + 1 } : idea);
+  saveIdeas();
+  renderIdeas();
+});
+
+document.querySelector("[data-order-form]").addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  if (!cart.length) {
+    showToast("Эхлээд сагсанд бүтээгдэхүүн нэмээрэй.");
+    return;
+  }
+
+  const formData = new FormData(event.currentTarget);
+  orderResult.innerHTML = '<p class="cart-note">Order ID үүсгэж байна...</p>';
+  const data = await createOrder(formData);
+  renderOrderResult(data);
+  renderStatus(await checkOrderStatus(data.orderId));
+  showToast("Order ID амжилттай үүслээ.");
 });
 
 setTheme(activeTheme);
 renderProducts();
 renderCart();
+loadStarterIdeas();
