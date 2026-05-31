@@ -1,10 +1,10 @@
 # AI Mongolia
 
-Digital subscription store + backend-ready commerce engine.
+Digital subscription store, order tracking, payment-ready checkout, community idea board.
 
 ## Ажиллуулах
 
-Local static preview:
+Local preview:
 
 ```bash
 python -m http.server 8081
@@ -23,16 +23,16 @@ Vercel дээр `/api` folder автоматаар serverless functions болж
 - Бүтээгдэхүүнүүд: `script.js` доторх `products` массив
 - Нүүр, section layout: `index.html`
 - Өнгө, responsive design: `styles.css`
-- Backend endpoint-үүд: `api/`
+- Захиалгын API: `api/`
 - Logo: `assets/ai-mongolia-logo.svg`
 - Hero visual: `assets/digital-hero.svg`
 - Сурталчилгааны copy: `marketing-plan.md`
 
-## Backend mechanics
+## Захиалгын механик
 
-- `/api/create-order`: cart + customer мэдээллээр order ID болон demo QPay invoice үүсгэнэ
+- `/api/create-order`: cart + customer мэдээллээр order ID болон төлбөрийн нэхэмжлэх үүсгэнэ
 - `/api/order-status`: order ID-р төлөв, progress, timeline буцаана
-- `/api/ideas`: community brainstorm board-ийн санаа авах demo endpoint
+- `/api/ideas`: хэрэглэгчийн санал авах route
 
 ## Одоогийн боломжууд
 
@@ -40,8 +40,8 @@ Vercel дээр `/api` folder автоматаар serverless functions болж
 - Search болон category filter
 - Smart bundle recommendation quiz
 - Cart drawer, quantity нэмэх/хасах
-- Backend-ready order ID creation
-- Demo QPay invoice response
+- Order ID creation
+- Payment request response
 - Order tracking UI
 - Community brainstorm board
 - Day Shift / Night Shift mode

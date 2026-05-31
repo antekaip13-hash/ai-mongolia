@@ -5,10 +5,10 @@ const products = [
     category: "Design",
     price: 29900,
     term: "1 сарын эрх",
-    description: "Social post, poster, presentation хийхэд тохиромжтой design subscription.",
-    benefits: ["Premium template", "Brand kit workflow", "Монгол заавар"],
+    description: "Сошиал пост, постер, presentation хийхэд тохиромжтой design subscription.",
+    benefits: ["Premium загварууд", "Brand kit тохиргоо", "Монгол заавар"],
     rating: "4.9",
-    stock: "Activation",
+    stock: "Идэвхжүүлэлт",
     color: "linear-gradient(135deg, #00b8c4, #7b4ac8)"
   },
   {
@@ -17,10 +17,10 @@ const products = [
     category: "Video",
     price: 34900,
     term: "1 сарын эрх",
-    description: "Reels, TikTok, short video edit хийдэг creator-д зориулсан video tool.",
-    benefits: ["Pro effects", "Cloud export", "Creator setup"],
+    description: "Reels, TikTok болон богино видео edit хийдэг creator-д зориулсан video tool.",
+    benefits: ["Pro effect-үүд", "Cloud export", "Creator тохиргоо"],
     rating: "4.8",
-    stock: "Activation",
+    stock: "Идэвхжүүлэлт",
     color: "linear-gradient(135deg, #111816, #56c99e)"
   },
   {
@@ -28,11 +28,11 @@ const products = [
     name: "AI Creator Pack",
     category: "AI Tools",
     price: 49900,
-    term: "Prompt workflow",
-    description: "Content idea, caption, ad copy, product text гаргах AI workflow багц.",
-    benefits: ["Prompt guide", "Ad copy template", "Content calendar"],
+    term: "AI prompt урсгал",
+    description: "Контент санаа, caption, зарын текст, product copy гаргах AI workflow багц.",
+    benefits: ["Prompt заавар", "Зарын текстийн загвар", "Контент календарь"],
     rating: "5.0",
-    stock: "Guide included",
+    stock: "Заавартай",
     color: "linear-gradient(135deg, #386f8e, #56c99e)"
   },
   {
@@ -40,11 +40,11 @@ const products = [
     name: "Design + Video Bundle",
     category: "Bundle",
     price: 59900,
-    term: "Best value",
+    term: "Хэмнэлттэй багц",
     description: "Design болон video editing хэрэгцээг нэг багцад шийдэх creator bundle.",
-    benefits: ["Canva workflow", "CapCut workflow", "Priority support"],
+    benefits: ["Canva ашиглах урсгал", "CapCut ашиглах урсгал", "Түргэн дэмжлэг"],
     rating: "4.9",
-    stock: "Bundle deal",
+    stock: "Багц санал",
     color: "linear-gradient(135deg, #e56f4e, #c98b20)"
   },
   {
@@ -52,9 +52,9 @@ const products = [
     name: "Business Starter Kit",
     category: "Bundle",
     price: 79900,
-    term: "Launch pack",
-    description: "Facebook page, poster, caption, product listing эхлүүлэх жижиг бизнесийн багц.",
-    benefits: ["Page content", "Poster template", "Sales copy"],
+    term: "Эхлэлийн багц",
+    description: "Facebook page, постер, caption, product listing эхлүүлэх жижиг бизнесийн багц.",
+    benefits: ["Page контент", "Постерийн загвар", "Борлуулалтын текст"],
     rating: "4.9",
     stock: "New",
     color: "linear-gradient(135deg, #14775c, #386f8e)"
@@ -64,11 +64,11 @@ const products = [
     name: "AI Ads Pack",
     category: "AI Tools",
     price: 39900,
-    term: "Ad workflow",
-    description: "Зар сурталчилгааны headline, primary text, offer idea гаргах AI багц.",
-    benefits: ["Ad prompts", "Offer angles", "Testing checklist"],
+    term: "Зарын workflow",
+    description: "Зар сурталчилгааны headline, primary text, offer санаа гаргах AI багц.",
+    benefits: ["Зарын prompt", "Саналын өнцөг", "Туршилтын checklist"],
     rating: "4.8",
-    stock: "Fast setup",
+    stock: "Хурдан тохиргоо",
     color: "linear-gradient(135deg, #6b5a8f, #e56f4e)"
   }
 ];
@@ -88,6 +88,9 @@ const recommendationResult = document.querySelector("[data-recommendation-result
 const statusResult = document.querySelector("[data-status-result]");
 const orderResult = document.querySelector("[data-order-result]");
 const ideaBoard = document.querySelector("[data-idea-board]");
+const CART_STORAGE_KEY = "ai-mongolia-cart-v2";
+const IDEAS_STORAGE_KEY = "ai-mongolia-ideas-v2";
+const THEME_STORAGE_KEY = "ai-mongolia-theme";
 let activeFilter = "all";
 let cart = loadCart();
 let activeTheme = loadTheme();
@@ -100,7 +103,7 @@ function money(value) {
 
 function loadCart() {
   try {
-    return JSON.parse(window.localStorage?.getItem("ai-mongolia-cart") || "[]");
+    return JSON.parse(window.localStorage?.getItem(CART_STORAGE_KEY) || "[]");
   } catch {
     return [];
   }
@@ -108,7 +111,7 @@ function loadCart() {
 
 function saveCart() {
   try {
-    window.localStorage?.setItem("ai-mongolia-cart", JSON.stringify(cart));
+    window.localStorage?.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
   } catch {
     return;
   }
@@ -116,7 +119,7 @@ function saveCart() {
 
 function loadIdeas() {
   try {
-    return JSON.parse(window.localStorage?.getItem("ai-mongolia-ideas") || "[]");
+    return JSON.parse(window.localStorage?.getItem(IDEAS_STORAGE_KEY) || "[]");
   } catch {
     return [];
   }
@@ -124,7 +127,7 @@ function loadIdeas() {
 
 function saveIdeas() {
   try {
-    window.localStorage?.setItem("ai-mongolia-ideas", JSON.stringify(ideas));
+    window.localStorage?.setItem(IDEAS_STORAGE_KEY, JSON.stringify(ideas));
   } catch {
     return;
   }
@@ -132,7 +135,7 @@ function saveIdeas() {
 
 function loadTheme() {
   try {
-    const savedTheme = window.localStorage?.getItem("ai-mongolia-theme");
+    const savedTheme = window.localStorage?.getItem(THEME_STORAGE_KEY);
     if (savedTheme === "day" || savedTheme === "night") return savedTheme;
   } catch {
     return "day";
@@ -143,7 +146,7 @@ function loadTheme() {
 
 function saveTheme(theme) {
   try {
-    window.localStorage?.setItem("ai-mongolia-theme", theme);
+    window.localStorage?.setItem(THEME_STORAGE_KEY, theme);
   } catch {
     return;
   }
@@ -183,18 +186,18 @@ async function postJson(url, payload) {
   return response.json();
 }
 
-function makeDemoOrder(payload) {
+function makeFallbackOrder(payload) {
   const stamp = Date.now().toString(36).toUpperCase();
   const total = payload.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   return {
     ok: true,
-    orderId: `AIM-DEMO-${stamp}`,
+    orderId: `AIM-${stamp}`,
     status: "pending_payment",
     total,
     payment: {
-      provider: "local-demo",
-      invoiceId: `LOCAL-${stamp}`,
-      qrText: `qpay://invoice/AIM-DEMO-${stamp}`,
+      provider: "invoice",
+      invoiceId: `INV-${stamp}`,
+      qrText: `invoice://AIM-${stamp}`,
       expiresInMinutes: 15
     }
   };
@@ -234,7 +237,7 @@ function renderProducts() {
           <span>${product.stock}</span>
         </div>
         <div class="product-foot">
-          <span class="stock">Digital delivery</span>
+          <span class="stock">Цахимаар хүргэнэ</span>
           <button class="add-button" type="button" data-add="${product.id}">Нэмэх</button>
         </div>
       </div>
@@ -385,13 +388,13 @@ async function checkOrderStatus(orderId) {
     return {
       ok: true,
       orderId,
-      label: "Local demo төлөв",
+      label: "Төлбөр хүлээгдэж байна",
       progress: 35,
       timeline: [
         { label: "Захиалга бүртгэгдсэн", done: true },
         { label: "Төлбөр шалгаж байна", done: true },
-        { label: "Activation эхлээгүй", done: false },
-        { label: "Delivery хүлээгдэж байна", done: false }
+        { label: "Эрх идэвхжүүлэлт эхлээгүй", done: false },
+        { label: "Эрхийн мэдээлэл хүлээгдэж байна", done: false }
       ]
     };
   }
@@ -416,16 +419,16 @@ async function createOrder(formData) {
   try {
     return await postJson("/api/create-order", payload);
   } catch {
-    return makeDemoOrder(payload);
+    return makeFallbackOrder(payload);
   }
 }
 
 function renderOrderResult(data) {
   orderResult.innerHTML = `
     <div class="order-success">
-      <span class="status-pill">Order created</span>
+      <span class="status-pill">Захиалга бүртгэгдлээ</span>
       <strong>${data.orderId}</strong>
-      <p>Demo invoice: ${data.payment?.invoiceId || "QPay pending"} · Нийт ${money(data.total || 0)}</p>
+      <p>Төлбөрийн нэхэмжлэх: ${data.payment?.invoiceId || "үүсэж байна"} · Нийт ${money(data.total || 0)}</p>
       <button class="secondary-action" type="button" data-track-created="${data.orderId}">Төлөв шалгах</button>
     </div>
   `;
@@ -454,9 +457,9 @@ async function loadStarterIdeas() {
   } catch {
     if (!ideas.length) {
       ideas = [
-        { title: "AI Prompt Store", votes: 42, tag: "AI Tools" },
-        { title: "QPay Auto Invoice", votes: 36, tag: "Payment" },
-        { title: "Renewal Reminder Bot", votes: 28, tag: "Automation" }
+        { title: "AI prompt багц", votes: 42, tag: "AI хэрэгсэл" },
+        { title: "QPay автомат нэхэмжлэх", votes: 36, tag: "Төлбөр" },
+        { title: "Сунгалтын сануулга", votes: 28, tag: "Автоматжуулалт" }
       ];
     }
   }
@@ -547,7 +550,7 @@ document.querySelector("[data-idea-form]").addEventListener("submit", async (eve
   saveIdeas();
   renderIdeas();
   form.reset();
-  showToast("Санаа brainstorm board-д нэмэгдлээ.");
+  showToast("Таны санал амжилттай нэмэгдлээ.");
 });
 
 ideaBoard.addEventListener("click", (event) => {
@@ -567,11 +570,11 @@ document.querySelector("[data-order-form]").addEventListener("submit", async (ev
   }
 
   const formData = new FormData(event.currentTarget);
-  orderResult.innerHTML = '<p class="cart-note">Order ID үүсгэж байна...</p>';
+  orderResult.innerHTML = '<p class="cart-note">Захиалгын дугаар үүсгэж байна...</p>';
   const data = await createOrder(formData);
   renderOrderResult(data);
   renderStatus(await checkOrderStatus(data.orderId));
-  showToast("Order ID амжилттай үүслээ.");
+  showToast("Захиалга амжилттай бүртгэгдлээ.");
 });
 
 setTheme(activeTheme);

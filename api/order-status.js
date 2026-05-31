@@ -6,7 +6,7 @@ const statuses = [
   },
   {
     key: "activation_queue",
-    label: "Activation дараалалд орсон",
+    label: "Эрх идэвхжүүлэх дараалалд орсон",
     progress: 68
   },
   {
@@ -48,8 +48,8 @@ export default function handler(req, res) {
     timeline: [
       { label: "Захиалга бүртгэгдсэн", done: true },
       { label: "Төлбөр шалгаж байна", done: status.progress >= 35 },
-      { label: "Activation эхэлсэн", done: status.progress >= 68 },
-      { label: "Delivery илгээгдсэн", done: status.progress >= 100 }
+      { label: "Эрх идэвхжүүлэлт эхэлсэн", done: status.progress >= 68 },
+      { label: "Эрхийн мэдээлэл илгээгдсэн", done: status.progress >= 100 }
     ]
   });
 };

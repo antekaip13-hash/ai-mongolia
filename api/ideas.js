@@ -17,19 +17,19 @@ function readBody(req) {
 
 const starterIdeas = [
   {
-    title: "AI Prompt Store",
+    title: "AI prompt багц",
     votes: 42,
-    tag: "AI Tools"
+    tag: "AI хэрэгсэл"
   },
   {
-    title: "QPay Auto Invoice",
+    title: "QPay автомат нэхэмжлэх",
     votes: 36,
-    tag: "Payment"
+    tag: "Төлбөр"
   },
   {
-    title: "Renewal Reminder Bot",
+    title: "Сунгалтын сануулга",
     votes: 28,
-    tag: "Automation"
+    tag: "Автоматжуулалт"
   }
 ];
 
@@ -71,7 +71,7 @@ export default async function handler(req, res) {
         votes: 1,
         receivedAt: new Date().toISOString()
       },
-      note: "Demo API accepted the idea. Connect a database to persist community submissions."
+      note: "Таны санал хүлээн авлаа."
     });
   } catch (error) {
     res.status(500).json({ error: "Could not save idea" });

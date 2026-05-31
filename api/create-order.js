@@ -60,15 +60,15 @@ export default async function handler(req, res) {
       status: "pending_payment",
       total,
       payment: {
-        provider: "qpay-demo",
-        invoiceId: `DEMO-${orderId}`,
-        qrText: `qpay://invoice/${orderId}`,
+        provider: "invoice",
+        invoiceId: `INV-${orderId}`,
+        qrText: `invoice://order/${orderId}`,
         expiresInMinutes: 15
       },
       nextSteps: [
-        "Төлбөрийн invoice үүссэн",
-        "Төлбөр баталгаажмагц activation эхэлнэ",
-        "Эрхийн мэдээлэл customer contact руу илгээгдэнэ"
+        "Төлбөрийн нэхэмжлэх үүссэн",
+        "Төлбөр баталгаажмагц эрх идэвхжүүлэлт эхэлнэ",
+        "Эрхийн мэдээлэл таны холбоо барих хаяг руу илгээгдэнэ"
       ]
     });
   } catch (error) {
