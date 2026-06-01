@@ -96,6 +96,9 @@ const loginForm = document.querySelector("[data-login-form]");
 const registerForm = document.querySelector("[data-register-form]");
 const logoutButton = document.querySelector("[data-logout]");
 const accountTabs = document.querySelectorAll("[data-account-tab]");
+const accountOrdersPanel = document.querySelector("[data-account-orders-panel]");
+const accountOrdersEl = document.querySelector("[data-account-orders]");
+const refreshMyOrdersButton = document.querySelector("[data-refresh-my-orders]");
 const recommendationResult = document.querySelector("[data-recommendation-result]");
 const statusResult = document.querySelector("[data-status-result]");
 const orderResult = document.querySelector("[data-order-result]");
@@ -235,6 +238,11 @@ function saveAuth(nextAuth) {
     return;
   }
   renderAccount();
+  if (auth?.user) {
+    loadMyOrders().catch(() => renderMyOrders([]));
+  } else {
+    renderMyOrders([]);
+  }
 }
 
 function authHeaders() {
@@ -276,10 +284,12 @@ function renderAccount() {
   logoutButton.classList.toggle("is-hidden", !user);
   loginForm.classList.toggle("is-hidden", Boolean(user));
   registerForm.classList.add("is-hidden");
+  accountOrdersPanel?.classList.toggle("is-hidden", !user);
   accountButton.textContent = user ? user.name : "Account";
 
   if (!user) {
     accountStatus.innerHTML = '<p class="cart-note">Account үүсгээд захиалга бүртгүүлэх, admin эрхтэй бол удирдлагын хэсэг рүү орох боломжтой.</p>';
+    renderMyOrders([]);
     return;
   }
 
@@ -291,6 +301,54 @@ function renderAccount() {
     </div>
   `;
   prefillOrderForm();
+}
+
+function renderMyOrders(orders = []) {
+  if (!accountOrdersEl) return;
+
+  if (!auth?.user) {
+    accountOrdersEl.innerHTML = "";
+    return;
+  }
+
+  if (!orders.length) {
+    accountOrdersEl.innerHTML = '<p class="cart-note">Одоогоор таны account дээр захиалга бүртгэгдээгүй байна.</p>';
+    return;
+  }
+
+  accountOrdersEl.innerHTML = orders.map((order) => {
+    const status = order.publicStatus || {};
+    const createdAt = order.createdAt ? new Date(order.createdAt).toLocaleString("mn-MN") : "-";
+    const items = (order.items || []).map((item) => `${escapeHtml(item.name)} x ${Number(item.quantity || 0)}`).join(", ");
+
+    return `
+      <article class="account-order-card">
+        <div>
+          <span class="status-pill">${escapeHtml(status.label || order.status)}</span>
+          <strong>${escapeHtml(order.orderId)}</strong>
+          <small>${escapeHtml(createdAt)}</small>
+        </div>
+        <p>${items || "Барааны мэдээлэл алга"}</p>
+        <div class="account-order-foot">
+          <span>${money(order.total || 0)}</span>
+          <button class="secondary-action compact-action" type="button" data-track-account-order="${escapeHtml(order.orderId)}">Төлөв</button>
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+async function loadMyOrders() {
+  if (!auth?.token || !accountOrdersEl) return;
+  accountOrdersEl.innerHTML = '<p class="cart-note">Захиалгын түүх уншиж байна...</p>';
+
+  const response = await fetch("/api/my-orders", {
+    headers: authHeaders()
+  });
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) throw new Error(data.error || "Order history unavailable");
+  renderMyOrders(data.orders || []);
 }
 
 function prefillOrderForm() {
@@ -323,10 +381,10 @@ async function refreshAuth() {
   }
 }
 
-async function postJson(url, payload) {
+async function postJson(url, payload, extraHeaders = {}) {
   const response = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...extraHeaders },
     body: JSON.stringify(payload)
   });
 
@@ -600,6 +658,7 @@ async function createOrder(formData) {
     customer: {
       name: formData.get("name"),
       phone: formData.get("phone"),
+      email: auth?.user?.email || "",
       note: formData.get("note")
     },
     items: cart.map((item) => ({
@@ -612,7 +671,7 @@ async function createOrder(formData) {
   };
 
   try {
-    return await postJson("/api/create-order", payload);
+    return await postJson("/api/create-order", payload, authHeaders());
   } catch {
     return makeFallbackOrder(payload);
   }
@@ -733,6 +792,18 @@ logoutButton.addEventListener("click", () => {
   showToast("Account-аас гарлаа.");
 });
 
+refreshMyOrdersButton?.addEventListener("click", () => {
+  loadMyOrders().catch((error) => showToast(error.message));
+});
+
+accountOrdersEl?.addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-track-account-order]");
+  if (!button) return;
+  renderStatus(await checkOrderStatus(button.dataset.trackAccountOrder));
+  closeAccount();
+  document.querySelector("#engine").scrollIntoView({ behavior: "smooth" });
+});
+
 filterButtons.forEach((button) => {
   button.addEventListener("click", () => {
     filterButtons.forEach((item) => item.classList.remove("is-active"));
@@ -817,6 +888,7 @@ document.querySelector("[data-order-form]").addEventListener("submit", async (ev
   const data = await createOrder(formData);
   renderOrderResult(data);
   renderStatus(await checkOrderStatus(data.orderId));
+  if (auth?.user) loadMyOrders().catch(() => {});
   showToast("Захиалга амжилттай бүртгэгдлээ.");
 });
 

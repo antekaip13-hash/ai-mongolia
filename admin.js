@@ -1,10 +1,13 @@
 const adminForm = document.querySelector("[data-admin-form]");
 const ordersEl = document.querySelector("[data-admin-orders]");
 const countEl = document.querySelector("[data-admin-count]");
-const storageModeEl = document.querySelector("[data-storage-mode]");
-const updatedEl = document.querySelector("[data-admin-updated]");
+const pendingEl = document.querySelector("[data-admin-pending]");
+const readyEl = document.querySelector("[data-admin-ready]");
+const revenueEl = document.querySelector("[data-admin-revenue]");
 const messageEl = document.querySelector("[data-admin-message]");
 const warningEl = document.querySelector("[data-admin-warning]");
+const orderSearchInput = document.querySelector("[data-order-search]");
+const orderStatusFilter = document.querySelector("[data-order-status-filter]");
 const productForm = document.querySelector("[data-product-form]");
 const productsEl = document.querySelector("[data-admin-products]");
 const productMessageEl = document.querySelector("[data-product-message]");
@@ -15,6 +18,7 @@ const userMessageEl = document.querySelector("[data-user-message]");
 const setupChecksEl = document.querySelector("[data-setup-checks]");
 const setupMessageEl = document.querySelector("[data-setup-message]");
 const formatter = new Intl.NumberFormat("mn-MN");
+let adminOrders = [];
 let adminProducts = [];
 let adminUsers = [];
 
@@ -113,6 +117,7 @@ function renderOrder(order) {
       <div class="admin-order-details">
         <span>Хэрэглэгч: <strong>${order.customer?.name || "-"}</strong></span>
         <span>Холбоо: <strong>${order.customer?.phone || "-"}</strong></span>
+        <span>Account: <strong>${order.accountEmail || order.customer?.email || "-"}</strong></span>
         <span>Бараа: <strong>${items || "-"}</strong></span>
       </div>
       <div class="admin-order-actions">
@@ -129,17 +134,53 @@ function renderOrder(order) {
 }
 
 function renderOrders(data) {
-  const orders = data.orders || [];
-  countEl.textContent = orders.length;
-  storageModeEl.textContent = data.storageMode === "redis" ? "Database холбогдсон" : "Түр хадгалалт";
+  adminOrders = data.orders || [];
+  renderOrderMetrics(adminOrders);
   warningEl.hidden = data.storageMode === "redis";
-  updatedEl.textContent = new Date().toLocaleTimeString("mn-MN");
-  messageEl.textContent = orders.length
-    ? "Захиалгын жагсаалт шинэчлэгдлээ."
+  renderOrderList();
+}
+
+function renderOrderMetrics(orders) {
+  countEl.textContent = orders.length;
+  pendingEl.textContent = orders.filter((order) => order.status === "pending_payment").length;
+  readyEl.textContent = orders.filter((order) => order.status === "ready").length;
+  revenueEl.textContent = money(orders
+    .filter((order) => order.status !== "cancelled")
+    .reduce((sum, order) => sum + Number(order.total || 0), 0));
+}
+
+function orderHaystack(order) {
+  return [
+    order.orderId,
+    order.status,
+    order.publicStatus?.label,
+    order.customer?.name,
+    order.customer?.phone,
+    order.customer?.email,
+    order.accountEmail,
+    ...(order.items || []).map((item) => `${item.name} ${item.term}`)
+  ].join(" ").toLowerCase();
+}
+
+function getVisibleOrders() {
+  const search = orderSearchInput?.value.trim().toLowerCase() || "";
+  const status = orderStatusFilter?.value || "all";
+
+  return adminOrders.filter((order) => {
+    const matchesStatus = status === "all" || order.status === status;
+    const matchesSearch = !search || orderHaystack(order).includes(search);
+    return matchesStatus && matchesSearch;
+  });
+}
+
+function renderOrderList() {
+  const orders = getVisibleOrders();
+  messageEl.textContent = adminOrders.length
+    ? `${orders.length} / ${adminOrders.length} захиалга харагдаж байна.`
     : "Одоогоор захиалга бүртгэгдээгүй байна.";
   ordersEl.innerHTML = orders.length
     ? orders.map(renderOrder).join("")
-    : '<p class="cart-note">Шинэ захиалга орж ирэхэд энд харагдана.</p>';
+    : '<p class="cart-note">Энэ шүүлтүүрт тохирох захиалга алга.</p>';
 }
 
 function renderProduct(product) {
@@ -337,6 +378,9 @@ ordersEl.addEventListener("click", (event) => {
     messageEl.textContent = error.message;
   });
 });
+
+orderSearchInput?.addEventListener("input", renderOrderList);
+orderStatusFilter?.addEventListener("change", renderOrderList);
 
 productForm.addEventListener("submit", (event) => {
   event.preventDefault();

@@ -47,12 +47,16 @@
         <strong data-admin-count>0</strong>
       </div>
       <div>
-        <span>Хадгалалтын горим</span>
-        <strong data-storage-mode>Уншиж байна</strong>
+        <span>Хүлээгдэж буй</span>
+        <strong data-admin-pending>0</strong>
       </div>
       <div>
-        <span>Сүүлийн шинэчлэлт</span>
-        <strong data-admin-updated>-</strong>
+        <span>Бэлэн болсон</span>
+        <strong data-admin-ready>0</strong>
+      </div>
+      <div>
+        <span>Нийт борлуулалт</span>
+        <strong data-admin-revenue>0₮</strong>
       </div>
     </section>
 
@@ -75,6 +79,22 @@
       <div class="admin-orders-head">
         <h2>Захиалгууд</h2>
         <p data-admin-message>Захиалгын мэдээлэл уншиж байна...</p>
+      </div>
+      <div class="admin-order-tools">
+        <label>
+          Хайх
+          <input type="search" data-order-search placeholder="Order ID, нэр, утас, бараа">
+        </label>
+        <label>
+          Төлөв
+          <select data-order-status-filter>
+            <option value="all">Бүх төлөв</option>
+            <option value="pending_payment">Төлбөр хүлээгдэж байна</option>
+            <option value="activation_queue">Идэвхжүүлэх дараалал</option>
+            <option value="ready">Бэлэн болсон</option>
+            <option value="cancelled">Цуцлагдсан</option>
+          </select>
+        </label>
       </div>
       <div class="admin-order-list" data-admin-orders></div>
     </section>

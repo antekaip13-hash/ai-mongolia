@@ -1,3 +1,4 @@
+import { getRequestUser } from "./_auth.js";
 import { saveOrder } from "./_store.js";
 
 function readBody(req) {
@@ -26,7 +27,7 @@ function makeOrderId() {
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
   if (req.method === "OPTIONS") {
     res.status(204).end();
@@ -42,6 +43,7 @@ export default async function handler(req, res) {
     const payload = await readBody(req);
     const items = Array.isArray(payload.items) ? payload.items : [];
     const customer = payload.customer || {};
+    const user = await getRequestUser(req);
     const total = items.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0);
 
     if (!items.length) {
@@ -61,8 +63,10 @@ export default async function handler(req, res) {
       customer: {
         name: customer.name,
         phone: customer.phone,
+        email: user?.email || customer.email || "",
         note: customer.note || ""
       },
+      accountEmail: user?.email || "",
       items,
       total,
       payment: {
