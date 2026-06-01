@@ -21,14 +21,20 @@ function base64Url(value) {
 }
 
 function getAuthSecret() {
-  return globalThis.process?.env?.AUTH_SECRET || globalThis.process?.env?.ADMIN_PIN || "ai-mongolia-local-auth-secret";
+  const env = globalThis.process?.env || {};
+  if (env.AUTH_SECRET || env.ADMIN_PIN) return env.AUTH_SECRET || env.ADMIN_PIN;
+  return env.VERCEL ? "" : "ai-mongolia-local-auth-secret";
 }
 
 function sign(value) {
-  return crypto.createHmac("sha256", getAuthSecret()).update(value).digest("base64url");
+  const secret = getAuthSecret();
+  if (!secret) return "";
+  return crypto.createHmac("sha256", secret).update(value).digest("base64url");
 }
 
 function createSignedToken(user) {
+  if (!getAuthSecret()) return `session_${crypto.randomBytes(32).toString("base64url")}`;
+
   const payload = base64Url(JSON.stringify({
     user: publicUser(user),
     iat: Date.now()
@@ -38,7 +44,7 @@ function createSignedToken(user) {
 
 function verifySignedToken(token) {
   const [payload, signature] = String(token || "").split(".");
-  if (!payload || !signature || sign(payload) !== signature) return null;
+  if (!getAuthSecret() || !payload || !signature || sign(payload) !== signature) return null;
 
   try {
     return JSON.parse(Buffer.from(payload, "base64url").toString("utf8")).user || null;
