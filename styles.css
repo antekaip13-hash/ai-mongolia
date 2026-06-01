@@ -324,6 +324,42 @@ h1 {
   letter-spacing: 0;
 }
 
+.hero-title {
+  display: grid;
+  gap: 8px;
+  max-width: 660px;
+  margin-bottom: 22px;
+  font-family: Montserrat, Manrope, Inter, Arial, sans-serif;
+  font-size: 66px;
+  font-weight: 900;
+  line-height: 1.05;
+}
+
+.hero-title-accent {
+  display: inline-block;
+  width: max-content;
+  max-width: 100%;
+  color: transparent;
+  background: linear-gradient(135deg, var(--green), var(--blue) 52%, var(--coral));
+  -webkit-background-clip: text;
+  background-clip: text;
+  font-size: 0.56em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+body[data-theme="night"] .hero-title-accent {
+  background: linear-gradient(135deg, #7be1b8, #f1bd56 58%, #ff8a68);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.hero-title-main {
+  display: block;
+  max-width: 620px;
+  text-wrap: balance;
+}
+
 h2 {
   margin-bottom: 14px;
   font-size: clamp(30px, 4vw, 50px);
@@ -1898,6 +1934,10 @@ body[data-theme="night"] .shift-switch button.is-active {
   .hero {
     min-height: auto;
   }
+
+  .hero-title {
+    font-size: 56px;
+  }
 }
 
 @media (max-width: 720px) {
@@ -1949,6 +1989,14 @@ body[data-theme="night"] .shift-switch button.is-active {
 
   h1 {
     font-size: 39px;
+  }
+
+  .hero-title {
+    font-size: 42px;
+  }
+
+  .hero-title-accent {
+    font-size: 0.54em;
   }
 
   .hero-actions a,
