@@ -20,7 +20,7 @@ Vercel дээр `/api` folder автоматаар serverless functions болж
 
 ## Засах гол хэсгүүд
 
-- Бүтээгдэхүүнүүд: `script.js` доторх `products` массив
+- Бүтээгдэхүүний default seed: `api/_products.js`
 - Нүүр, section layout: `index.html`
 - Өнгө, responsive design: `styles.css`
 - Захиалгын API: `api/`
@@ -34,6 +34,8 @@ Vercel дээр `/api` folder автоматаар serverless functions болж
 - `/api/order-status`: order ID-р төлөв, progress, timeline буцаана
 - `/api/ideas`: хэрэглэгчийн санал авах route
 - `/api/admin-orders`: admin dashboard-д захиалга жагсаах, төлөв солих route
+- `/api/products`: дэлгүүрийн бүтээгдэхүүний catalog буцаана
+- `/api/admin-products`: admin panel-аас бүтээгдэхүүн нэмэх, үнэ, зураг, хугацаа, тайлбар засах route
 
 ## Admin dashboard
 
@@ -60,6 +62,7 @@ Env байхгүй үед API түр хадгалалтаар ажиллана. 
 ## Одоогийн боломжууд
 
 - Digital subscription catalog
+- Admin panel-аас бүтээгдэхүүний зураг, үнэ, хугацаа, тайлбар засах
 - Search болон category filter
 - Smart bundle recommendation quiz
 - Cart drawer, quantity нэмэх/хасах

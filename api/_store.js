@@ -29,7 +29,8 @@ const statusMap = {
 const memory = globalThis.__aiMongoliaStore || {
   orders: new Map(),
   orderIds: [],
-  ideas: []
+  ideas: [],
+  products: null
 };
 globalThis.__aiMongoliaStore = memory;
 
@@ -157,4 +158,41 @@ export async function addIdea(idea) {
 
   memory.ideas = [nextIdea, ...memory.ideas];
   return nextIdea;
+}
+
+export async function listProducts(defaultProducts) {
+  if (hasRedis) {
+    const data = await redisCommand(["GET", "products:catalog"]);
+    return data?.result ? JSON.parse(data.result) : defaultProducts;
+  }
+
+  return memory.products || defaultProducts;
+}
+
+export async function saveProducts(products) {
+  const normalized = products.map((product) => ({
+    ...product,
+    price: Number(product.price || 0),
+    benefits: Array.isArray(product.benefits) ? product.benefits : [],
+    updatedAt: new Date().toISOString()
+  }));
+
+  if (hasRedis) {
+    await redisCommand(["SET", "products:catalog", JSON.stringify(normalized)]);
+    return normalized;
+  }
+
+  memory.products = normalized;
+  return normalized;
+}
+
+export async function upsertProduct(product, defaultProducts) {
+  const products = await listProducts(defaultProducts);
+  const exists = products.some((item) => item.id === product.id);
+  const nextProducts = exists
+    ? products.map((item) => item.id === product.id ? { ...item, ...product } : item)
+    : [{ ...product, createdAt: new Date().toISOString() }, ...products];
+
+  await saveProducts(nextProducts);
+  return nextProducts.find((item) => item.id === product.id);
 }

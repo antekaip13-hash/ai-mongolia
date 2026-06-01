@@ -1,4 +1,4 @@
-const products = [
+const defaultProducts = [
   {
     id: "canva-pro",
     name: "Canva Pro",
@@ -72,6 +72,7 @@ const products = [
     color: "linear-gradient(135deg, #6b5a8f, #e56f4e)"
   }
 ];
+let products = [...defaultProducts];
 
 const formatter = new Intl.NumberFormat("mn-MN");
 const grid = document.querySelector("[data-product-grid]");
@@ -100,6 +101,35 @@ let ideas = loadIdeas();
 
 function money(value) {
   return `${formatter.format(value)}₮`;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function safeImageUrl(value) {
+  const url = String(value || "").trim();
+  if (!url) return "";
+  if (url.startsWith("assets/")) return url;
+
+  try {
+    const parsed = new URL(url);
+    return ["http:", "https:"].includes(parsed.protocol) ? parsed.href : "";
+  } catch {
+    return "";
+  }
+}
+
+function safeProductColor(value) {
+  const color = String(value || "").trim();
+  if (color.startsWith("linear-gradient(") || color.startsWith("radial-gradient(")) return color;
+  if (/^#[0-9a-f]{3,8}$/i.test(color)) return color;
+  return "linear-gradient(135deg, #14775c, #386f8e)";
 }
 
 function loadCart() {
@@ -220,30 +250,45 @@ function renderProducts() {
 
   grid.innerHTML = visibleProducts.map((product) => `
     <article class="product-card">
-      <div class="product-thumb" style="--thumb-bg: ${product.color}">
-        <span>${product.category}</span>
+      <div class="product-thumb" style="--thumb-bg: ${safeProductColor(product.color)}">
+        ${safeImageUrl(product.image)
+          ? `<img class="product-image" src="${escapeHtml(safeImageUrl(product.image))}" alt="${escapeHtml(product.name)}">`
+          : `<span>${escapeHtml(product.category)}</span>`}
       </div>
       <div class="product-body">
         <div class="product-meta">
-          <span class="category">${product.term}</span>
+          <span class="category">${escapeHtml(product.term)}</span>
           <span class="price">${money(product.price)}</span>
         </div>
-        <h3>${product.name}</h3>
-        <p>${product.description}</p>
+        <h3>${escapeHtml(product.name)}</h3>
+        <p>${escapeHtml(product.description)}</p>
         <ul class="product-benefits">
-          ${product.benefits.map((benefit) => `<li>${benefit}</li>`).join("")}
+          ${(product.benefits || []).map((benefit) => `<li>${escapeHtml(benefit)}</li>`).join("")}
         </ul>
-        <div class="rating" aria-label="${product.rating} үнэлгээ">
-          <span>★ ${product.rating}</span>
-          <span>${product.stock}</span>
+        <div class="rating" aria-label="${escapeHtml(product.rating)} үнэлгээ">
+          <span>★ ${escapeHtml(product.rating)}</span>
+          <span>${escapeHtml(product.stock)}</span>
         </div>
         <div class="product-foot">
           <span class="stock">Цахимаар хүргэнэ</span>
-          <button class="add-button" type="button" data-add="${product.id}">Нэмэх</button>
+          <button class="add-button" type="button" data-add="${escapeHtml(product.id)}">Нэмэх</button>
         </div>
       </div>
     </article>
   `).join("");
+}
+
+async function loadProducts() {
+  try {
+    const response = await fetch("/api/products");
+    if (!response.ok) throw new Error("Products unavailable");
+    const data = await response.json();
+    products = Array.isArray(data.products) && data.products.length ? data.products : [...defaultProducts];
+  } catch {
+    products = [...defaultProducts];
+  }
+
+  renderProducts();
 }
 
 function renderCart() {
@@ -595,6 +640,6 @@ document.querySelector("[data-order-form]").addEventListener("submit", async (ev
 });
 
 setTheme(activeTheme);
-renderProducts();
+loadProducts();
 renderCart();
 loadStarterIdeas();

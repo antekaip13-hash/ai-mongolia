@@ -19,6 +19,7 @@
     <nav class="nav-links" aria-label="Admin цэс">
       <a href="/">Дэлгүүр</a>
       <a href="#orders">Захиалгууд</a>
+      <a href="#products">Бүтээгдэхүүн</a>
     </nav>
   </header>
 
@@ -64,6 +65,68 @@
         <p data-admin-message>Захиалгын мэдээлэл уншиж байна...</p>
       </div>
       <div class="admin-order-list" data-admin-orders></div>
+    </section>
+
+    <section class="admin-products" id="products">
+      <div class="admin-orders-head">
+        <div>
+          <h2>Бүтээгдэхүүн удирдах</h2>
+          <p data-product-message>Бүтээгдэхүүний мэдээлэл уншиж байна...</p>
+        </div>
+      </div>
+      <form class="product-admin-form" data-product-form>
+        <input type="hidden" name="id">
+        <label>
+          Нэр
+          <input name="name" type="text" placeholder="Жишээ: Canva Pro" required>
+        </label>
+        <label>
+          Ангилал
+          <select name="category">
+            <option>Design</option>
+            <option>Video</option>
+            <option>AI Tools</option>
+            <option>Bundle</option>
+          </select>
+        </label>
+        <label>
+          Үнэ
+          <input name="price" type="number" min="0" step="100" placeholder="29900" required>
+        </label>
+        <label>
+          Хугацаа / төрөл
+          <input name="term" type="text" placeholder="1 сарын эрх">
+        </label>
+        <label>
+          Rating
+          <input name="rating" type="text" placeholder="4.9">
+        </label>
+        <label>
+          Төлөв
+          <input name="stock" type="text" placeholder="Идэвхжүүлэлт">
+        </label>
+        <label class="wide-field">
+          Зургийн URL
+          <input name="image" type="url" placeholder="https://... эсвэл assets/...">
+        </label>
+        <label class="wide-field">
+          Өнгө / gradient
+          <input name="color" type="text" placeholder="linear-gradient(135deg, #14775c, #386f8e)">
+        </label>
+        <label class="wide-field">
+          Тайлбар
+          <textarea name="description" rows="3" placeholder="Бүтээгдэхүүний богино тайлбар"></textarea>
+        </label>
+        <label class="wide-field">
+          Давуу талууд
+          <textarea name="benefits" rows="4" placeholder="Мөр бүрт нэг давуу тал бичнэ"></textarea>
+        </label>
+        <div class="wide-field product-form-actions">
+          <button class="primary-action" type="submit">Бүтээгдэхүүн хадгалах</button>
+          <button class="secondary-action" type="button" data-product-reset>Шинэ бүтээгдэхүүн</button>
+        </div>
+      </form>
+      <div class="admin-product-list" data-admin-products></div>
     </section>
   </main>
 

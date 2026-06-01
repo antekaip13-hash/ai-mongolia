@@ -1,0 +1,80 @@
+export const defaultProducts = [
+  {
+    id: "canva-pro",
+    name: "Canva Pro",
+    category: "Design",
+    price: 29900,
+    term: "1 сарын эрх",
+    description: "Сошиал пост, постер, presentation хийхэд тохиромжтой design subscription.",
+    benefits: ["Premium загварууд", "Brand kit тохиргоо", "Монгол заавар"],
+    rating: "4.9",
+    stock: "Идэвхжүүлэлт",
+    color: "linear-gradient(135deg, #00b8c4, #7b4ac8)",
+    image: ""
+  },
+  {
+    id: "capcut-pro",
+    name: "CapCut Pro",
+    category: "Video",
+    price: 34900,
+    term: "1 сарын эрх",
+    description: "Reels, TikTok болон богино видео edit хийдэг creator-д зориулсан video tool.",
+    benefits: ["Pro effect-үүд", "Cloud export", "Creator тохиргоо"],
+    rating: "4.8",
+    stock: "Идэвхжүүлэлт",
+    color: "linear-gradient(135deg, #111816, #56c99e)",
+    image: ""
+  },
+  {
+    id: "ai-creator-pack",
+    name: "AI Creator Pack",
+    category: "AI Tools",
+    price: 49900,
+    term: "AI prompt урсгал",
+    description: "Контент санаа, caption, зарын текст, product copy гаргах AI workflow багц.",
+    benefits: ["Prompt заавар", "Зарын текстийн загвар", "Контент календарь"],
+    rating: "5.0",
+    stock: "Заавартай",
+    color: "linear-gradient(135deg, #386f8e, #56c99e)",
+    image: ""
+  },
+  {
+    id: "design-video-bundle",
+    name: "Design + Video Bundle",
+    category: "Bundle",
+    price: 59900,
+    term: "Хэмнэлттэй багц",
+    description: "Design болон video editing хэрэгцээг нэг багцад шийдэх creator bundle.",
+    benefits: ["Canva ашиглах урсгал", "CapCut ашиглах урсгал", "Түргэн дэмжлэг"],
+    rating: "4.9",
+    stock: "Багц санал",
+    color: "linear-gradient(135deg, #e56f4e, #c98b20)",
+    image: ""
+  },
+  {
+    id: "business-starter",
+    name: "Business Starter Kit",
+    category: "Bundle",
+    price: 79900,
+    term: "Эхлэлийн багц",
+    description: "Facebook page, постер, caption, product listing эхлүүлэх жижиг бизнесийн багц.",
+    benefits: ["Page контент", "Постерийн загвар", "Борлуулалтын текст"],
+    rating: "4.9",
+    stock: "New",
+    color: "linear-gradient(135deg, #14775c, #386f8e)",
+    image: ""
+  },
+  {
+    id: "ai-ads-pack",
+    name: "AI Ads Pack",
+    category: "AI Tools",
+    price: 39900,
+    term: "Зарын workflow",
+    description: "Зар сурталчилгааны headline, primary text, offer санаа гаргах AI багц.",
+    benefits: ["Зарын prompt", "Саналын өнцөг", "Туршилтын checklist"],
+    rating: "4.8",
+    stock: "Хурдан тохиргоо",
+    color: "linear-gradient(135deg, #6b5a8f, #e56f4e)",
+    image: ""
+  }
+];

@@ -522,6 +522,18 @@ body[data-theme="night"] .product-card:hover {
   font-weight: 900;
 }
 
+.product-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-thumb:has(.product-image)::after {
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.2) 100%);
+}
+
 .product-body {
   display: flex;
   flex: 1;
@@ -1231,7 +1243,8 @@ body[data-theme="night"] .shift-switch button.is-active {
   font-size: 24px;
 }
 
-.admin-orders {
+.admin-orders,
+.admin-products {
   padding-top: 0;
 }
 
@@ -1321,6 +1334,87 @@ body[data-theme="night"] .shift-switch button.is-active {
 
 .admin-order-actions select {
   max-width: 320px;
+}
+
+.product-admin-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+}
+
+.product-admin-form label {
+  display: grid;
+  gap: 8px;
+  font-weight: 800;
+}
+
+.product-admin-form input,
+.product-admin-form select,
+.product-admin-form textarea {
+  width: 100%;
+  min-height: 46px;
+  padding: 12px 13px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--wash);
+}
+
+.wide-field {
+  grid-column: 1 / -1;
+}
+
+.product-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.admin-product-list {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-product-card {
+  display: grid;
+  grid-template-columns: 150px 1fr auto;
+  gap: 16px;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+}
+
+.admin-product-preview {
+  position: relative;
+  display: grid;
+  overflow: hidden;
+  height: 108px;
+  place-items: center;
+  color: white;
+  border-radius: 8px;
+  background: var(--thumb-bg);
+  font-weight: 900;
+}
+
+.admin-product-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-product-info p {
+  color: var(--muted);
+}
+
+.admin-product-info strong {
+  color: var(--green);
 }
 
 @media (max-width: 1120px) {
@@ -1439,8 +1533,14 @@ body[data-theme="night"] .shift-switch button.is-active {
   .admin-hero,
   .admin-summary,
   .admin-warning,
+  .admin-products,
   .admin-orders {
     padding: 56px 16px;
+  }
+
+  .product-admin-form,
+  .admin-product-card {
+    grid-template-columns: 1fr;
   }
 
   .admin-orders-head,
