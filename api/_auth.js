@@ -16,6 +16,37 @@ function verifyPassword(password, user) {
   return crypto.timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(user.passwordHash, "hex"));
 }
 
+function base64Url(value) {
+  return Buffer.from(value).toString("base64url");
+}
+
+function getAuthSecret() {
+  return globalThis.process?.env?.AUTH_SECRET || globalThis.process?.env?.ADMIN_PIN || "ai-mongolia-local-auth-secret";
+}
+
+function sign(value) {
+  return crypto.createHmac("sha256", getAuthSecret()).update(value).digest("base64url");
+}
+
+function createSignedToken(user) {
+  const payload = base64Url(JSON.stringify({
+    user: publicUser(user),
+    iat: Date.now()
+  }));
+  return `${payload}.${sign(payload)}`;
+}
+
+function verifySignedToken(token) {
+  const [payload, signature] = String(token || "").split(".");
+  if (!payload || !signature || sign(payload) !== signature) return null;
+
+  try {
+    return JSON.parse(Buffer.from(payload, "base64url").toString("utf8")).user || null;
+  } catch {
+    return null;
+  }
+}
+
 export function publicUser(user) {
   if (!user) return null;
   return {
@@ -49,7 +80,7 @@ export async function registerAccount(payload) {
     passwordHash: hash,
     createdAt: new Date().toISOString()
   });
-  const token = crypto.randomBytes(32).toString("hex");
+  const token = createSignedToken(user);
   await createSession(token, email);
 
   return { token, user: publicUser(user) };
@@ -64,7 +95,7 @@ export async function loginAccount(payload) {
     throw new Error("Email эсвэл нууц үг буруу байна");
   }
 
-  const token = crypto.randomBytes(32).toString("hex");
+  const token = createSignedToken(user);
   await createSession(token, email);
 
   return { token, user: publicUser(user) };
@@ -77,7 +108,8 @@ export function getBearerToken(req) {
 }
 
 export async function getRequestUser(req) {
-  return getSessionUser(getBearerToken(req));
+  const token = getBearerToken(req);
+  return (await getSessionUser(token)) || verifySignedToken(token);
 }
 
 export async function isAdminRequest(req) {

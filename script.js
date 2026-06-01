@@ -290,6 +290,29 @@ function renderAccount() {
   `;
 }
 
+async function refreshAuth() {
+  if (!auth?.token) {
+    renderAccount();
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/auth-me", {
+      headers: authHeaders()
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (response.ok && data.user) {
+      saveAuth({ token: auth.token, user: data.user });
+      return;
+    }
+
+    saveAuth(null);
+  } catch {
+    renderAccount();
+  }
+}
+
 async function postJson(url, payload) {
   const response = await fetch(url, {
     method: "POST",
@@ -775,7 +798,7 @@ document.querySelector("[data-order-form]").addEventListener("submit", async (ev
 });
 
 setTheme(activeTheme);
-renderAccount();
+refreshAuth();
 loadProducts();
 renderCart();
 loadStarterIdeas();
