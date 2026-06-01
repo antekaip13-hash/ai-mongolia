@@ -477,6 +477,17 @@ body[data-theme="night"] .trust-strip {
   box-shadow: var(--soft-shadow);
 }
 
+body[data-theme="night"] .product-card {
+  border-color: rgba(86, 201, 158, 0.18);
+  background: linear-gradient(180deg, #131d19 0%, #101614 100%);
+  box-shadow: 0 1px 0 rgba(86, 201, 158, 0.08);
+}
+
+body[data-theme="night"] .product-card:hover {
+  border-color: rgba(255, 138, 104, 0.5);
+  box-shadow: 0 18px 44px rgba(86, 201, 158, 0.14), 0 0 0 1px rgba(255, 138, 104, 0.18);
+}
+
 .product-thumb {
   position: relative;
   display: grid;
@@ -545,6 +556,10 @@ body[data-theme="night"] .trust-strip {
   white-space: nowrap;
 }
 
+body[data-theme="night"] .price {
+  color: var(--gold);
+}
+
 .product-body p {
   min-height: 50px;
   color: var(--muted);
@@ -590,6 +605,10 @@ body[data-theme="night"] .trust-strip {
   white-space: nowrap;
 }
 
+body[data-theme="night"] .stock {
+  color: #7be1b8;
+}
+
 .add-button {
   min-height: 42px;
   padding: 0 14px;
@@ -604,6 +623,20 @@ body[data-theme="night"] .trust-strip {
 
 .add-button:hover {
   background: var(--green);
+}
+
+body[data-theme="night"] .add-button {
+  color: #0c1210;
+  background: linear-gradient(135deg, #7be1b8 0%, #f1bd56 100%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 10px 24px rgba(86, 201, 158, 0.22);
+}
+
+body[data-theme="night"] .add-button:hover,
+body[data-theme="night"] .add-button:focus-visible {
+  background: linear-gradient(135deg, #ff8a68 0%, #f1bd56 100%);
+  box-shadow: 0 14px 34px rgba(255, 138, 104, 0.26), 0 0 0 4px rgba(255, 138, 104, 0.14);
+  outline: none;
 }
 
 .feature-band {
