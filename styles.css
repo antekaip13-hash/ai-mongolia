@@ -1358,6 +1358,32 @@ body[data-theme="night"] .idea-card span {
   font-weight: 900;
 }
 
+.account-credential-list {
+  display: grid;
+  gap: 8px;
+}
+
+.account-credential-card {
+  display: grid;
+  gap: 7px;
+  padding: 12px;
+  border: 1px solid rgba(20, 119, 92, 0.18);
+  border-radius: 8px;
+  background: var(--paper);
+}
+
+.account-credential-card span,
+.account-credential-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.account-credential-card code {
+  color: var(--ink);
+  font-weight: 900;
+}
+
 .compact-action {
   min-height: 38px;
   padding: 0 12px;
@@ -1797,6 +1823,7 @@ body[data-theme="night"] .shift-switch button.is-active {
 .admin-orders,
 .admin-products,
 .admin-setup,
+.admin-stock,
 .admin-users {
   padding-top: 0;
 }
@@ -1983,6 +2010,35 @@ body[data-theme="night"] .shift-switch button.is-active {
   background: var(--wash);
 }
 
+.stock-admin-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+}
+
+.stock-admin-form label {
+  display: grid;
+  gap: 8px;
+  font-weight: 800;
+}
+
+.stock-admin-form input,
+.stock-admin-form select,
+.stock-admin-form textarea {
+  width: 100%;
+  min-height: 46px;
+  padding: 12px 13px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--wash);
+}
+
 .wide-field {
   grid-column: 1 / -1;
 }
@@ -1996,6 +2052,65 @@ body[data-theme="night"] .shift-switch button.is-active {
 .admin-product-list {
   display: grid;
   gap: 14px;
+}
+
+.admin-stock-list {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-stock-card {
+  display: grid;
+  grid-template-columns: 1fr minmax(180px, 260px) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+}
+
+.admin-stock-card h3 {
+  margin: 8px 0 4px;
+}
+
+.admin-stock-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.stock-secret {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px dashed rgba(20, 119, 92, 0.24);
+  border-radius: 8px;
+  background: var(--wash);
+}
+
+.stock-secret span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.stock-secret strong {
+  overflow-wrap: anywhere;
+}
+
+.admin-delivery-summary {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid rgba(20, 119, 92, 0.18);
+  border-radius: 8px;
+  background: var(--wash);
+}
+
+.admin-delivery-summary span {
+  color: var(--muted);
+  line-height: 1.45;
 }
 
 .admin-product-card {
@@ -2224,13 +2339,16 @@ body[data-theme="night"] .shift-switch button.is-active {
   .admin-warning,
   .admin-setup,
   .admin-products,
+  .admin-stock,
   .admin-users,
   .admin-orders {
     padding: 56px 16px;
   }
 
   .product-admin-form,
+  .stock-admin-form,
   .admin-product-card,
+  .admin-stock-card,
   .admin-user-card {
     grid-template-columns: 1fr;
   }

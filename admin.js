@@ -13,6 +13,12 @@ const productsEl = document.querySelector("[data-admin-products]");
 const productMessageEl = document.querySelector("[data-product-message]");
 const productResetBtn = document.querySelector("[data-product-reset]");
 const productDeleteBtn = document.querySelector("[data-product-delete]");
+const stockForm = document.querySelector("[data-stock-form]");
+const stockProductSelect = document.querySelector("[data-stock-product]");
+const stockResetBtn = document.querySelector("[data-stock-reset]");
+const stockDeleteBtn = document.querySelector("[data-stock-delete]");
+const stockMessageEl = document.querySelector("[data-stock-message]");
+const stockEl = document.querySelector("[data-admin-stock]");
 const usersEl = document.querySelector("[data-admin-users]");
 const userMessageEl = document.querySelector("[data-user-message]");
 const setupChecksEl = document.querySelector("[data-setup-checks]");
@@ -20,6 +26,7 @@ const setupMessageEl = document.querySelector("[data-setup-message]");
 const formatter = new Intl.NumberFormat("mn-MN");
 let adminOrders = [];
 let adminProducts = [];
+let adminStock = [];
 let adminUsers = [];
 
 function money(value) {
@@ -128,8 +135,15 @@ function renderOrder(order) {
           <option value="ready" ${order.status === "ready" ? "selected" : ""}>Эрх бэлэн болсон</option>
           <option value="cancelled" ${order.status === "cancelled" ? "selected" : ""}>Цуцлагдсан</option>
         </select>
+        <button class="primary-action" type="button" data-confirm-payment="${order.orderId}">Confirm Payment</button>
         <button class="secondary-action" type="button" data-update-status="${order.orderId}">Төлөв хадгалах</button>
       </div>
+      ${order.delivery?.items?.length ? `
+        <div class="admin-delivery-summary">
+          <strong>Оноосон эрх</strong>
+          <span>${order.delivery.items.map((item) => `${escapeHtml(item.productName)}: ${escapeHtml(item.login)}`).join(" · ")}</span>
+        </div>
+      ` : ""}
     </article>
   `;
 }
@@ -205,12 +219,56 @@ function renderProduct(product) {
 
 function renderProducts(data) {
   adminProducts = data.products || [];
+  renderStockProductOptions();
   productMessageEl.textContent = adminProducts.length
     ? "Бүтээгдэхүүний жагсаалт шинэчлэгдлээ."
     : "Одоогоор бүтээгдэхүүн алга.";
   productsEl.innerHTML = adminProducts.length
     ? adminProducts.map(renderProduct).join("")
     : '<p class="cart-note">Бүтээгдэхүүн нэмэх form ашиглана уу.</p>';
+}
+
+function renderStockProductOptions() {
+  if (!stockProductSelect) return;
+  stockProductSelect.innerHTML = adminProducts.length
+    ? adminProducts.map((product) => `<option value="${escapeHtml(product.id)}">${escapeHtml(product.name)}</option>`).join("")
+    : '<option value="">Эхлээд бүтээгдэхүүн нэмнэ</option>';
+}
+
+function stockStatusLabel(status) {
+  if (status === "delivered") return "Delivered";
+  if (status === "reserved") return "Reserved";
+  return "Available";
+}
+
+function renderStockItem(item) {
+  return `
+    <article class="admin-stock-card">
+      <div>
+        <span class="status-pill">${stockStatusLabel(item.status)}</span>
+        <h3>${escapeHtml(item.productName || item.productId)}</h3>
+        <p>${escapeHtml(item.login)} · ${item.expiresAt ? `Дуусах: ${escapeHtml(item.expiresAt)}` : "Дуусах хугацаа оруулаагүй"}</p>
+        ${item.orderId ? `<p>Order: <strong>${escapeHtml(item.orderId)}</strong></p>` : ""}
+        ${item.note ? `<p>${escapeHtml(item.note)}</p>` : ""}
+      </div>
+      <div class="stock-secret">
+        <span>Password</span>
+        <strong>${escapeHtml(item.password)}</strong>
+      </div>
+      <button class="secondary-action" type="button" data-edit-stock="${escapeHtml(item.stockId)}">Засах</button>
+    </article>
+  `;
+}
+
+function renderStock(data) {
+  adminStock = data.stock || [];
+  const available = adminStock.filter((item) => item.status === "available").length;
+  stockMessageEl.textContent = adminStock.length
+    ? `${adminStock.length} stock байна · ${available} available`
+    : "Одоогоор stock credential алга.";
+  stockEl.innerHTML = adminStock.length
+    ? adminStock.map(renderStockItem).join("")
+    : '<p class="cart-note">Product сонгоод login/password stock нэмнэ үү.</p>';
 }
 
 function renderUser(user) {
@@ -246,6 +304,12 @@ async function loadProducts() {
   productMessageEl.textContent = "Бүтээгдэхүүний мэдээлэл уншиж байна...";
   const data = await adminFetch("/api/admin-products");
   renderProducts(data);
+}
+
+async function loadStock() {
+  stockMessageEl.textContent = "Stock credential уншиж байна...";
+  const data = await adminFetch("/api/admin-stock");
+  renderStock(data);
 }
 
 async function loadSetup() {
@@ -284,6 +348,63 @@ function clearProductForm() {
   productForm.elements.stock.value = "Идэвхжүүлэлт";
   productDeleteBtn.classList.add("is-hidden");
   productMessageEl.textContent = "Шинэ бүтээгдэхүүний мэдээлэл оруулна уу.";
+}
+
+function fillStockForm(item) {
+  stockForm.elements.stockId.value = item.stockId || "";
+  stockForm.elements.productId.value = item.productId || "";
+  stockForm.elements.login.value = item.login || "";
+  stockForm.elements.password.value = item.password || "";
+  stockForm.elements.expiresAt.value = item.expiresAt || "";
+  stockForm.elements.status.value = item.status || "available";
+  stockForm.elements.note.value = item.note || "";
+  stockDeleteBtn.classList.remove("is-hidden");
+  stockMessageEl.textContent = `${item.productName || item.productId} stock засаж байна.`;
+}
+
+function clearStockForm() {
+  stockForm.reset();
+  stockForm.elements.stockId.value = "";
+  stockForm.elements.status.value = "available";
+  stockDeleteBtn.classList.add("is-hidden");
+  stockMessageEl.textContent = "Шинэ login/password stock оруулна уу.";
+}
+
+async function saveStock() {
+  const formData = new FormData(stockForm);
+  const product = adminProducts.find((item) => item.id === formData.get("productId"));
+  const stock = {
+    stockId: formData.get("stockId"),
+    productId: formData.get("productId"),
+    productName: product?.name || formData.get("productId"),
+    login: formData.get("login"),
+    password: formData.get("password"),
+    expiresAt: formData.get("expiresAt"),
+    status: formData.get("status"),
+    note: formData.get("note")
+  };
+
+  await adminFetch("/api/admin-stock", {
+    method: stock.stockId ? "PATCH" : "POST",
+    body: JSON.stringify(stock)
+  });
+
+  clearStockForm();
+  await loadStock();
+}
+
+async function deleteSelectedStock() {
+  const stockId = stockForm.elements.stockId.value;
+  if (!stockId) return;
+  if (!window.confirm("Энэ stock credential-ийг устгах уу?")) return;
+
+  await adminFetch("/api/admin-stock", {
+    method: "DELETE",
+    body: JSON.stringify({ stockId })
+  });
+
+  clearStockForm();
+  await loadStock();
 }
 
 async function saveProduct() {
@@ -350,6 +471,17 @@ async function updateStatus(orderId) {
   await loadOrders();
 }
 
+async function confirmPayment(orderId) {
+  await adminFetch("/api/admin-orders", {
+    method: "PATCH",
+    body: JSON.stringify({
+      orderId,
+      action: "confirm_payment"
+    })
+  });
+  await Promise.all([loadOrders(), loadStock()]);
+}
+
 async function updateUser(email) {
   const select = document.querySelector(`[data-user-role="${CSS.escape(email)}"]`);
   await adminFetch("/api/admin-users", {
@@ -364,15 +496,24 @@ async function updateUser(email) {
 
 adminForm.addEventListener("submit", (event) => {
   event.preventDefault();
-  Promise.all([loadSetup(), loadOrders(), loadProducts(), loadUsers()]).catch((error) => {
+  Promise.all([loadSetup(), loadOrders(), loadProducts(), loadStock(), loadUsers()]).catch((error) => {
     setupMessageEl.textContent = error.message;
     messageEl.textContent = error.message;
     productMessageEl.textContent = error.message;
+    stockMessageEl.textContent = error.message;
     userMessageEl.textContent = error.message;
   });
 });
 
 ordersEl.addEventListener("click", (event) => {
+  const confirmButton = event.target.closest("[data-confirm-payment]");
+  if (confirmButton) {
+    confirmPayment(confirmButton.dataset.confirmPayment).catch((error) => {
+      messageEl.textContent = error.message;
+    });
+    return;
+  }
+
   const button = event.target.closest("[data-update-status]");
   if (!button) return;
   updateStatus(button.dataset.updateStatus).catch((error) => {
@@ -397,6 +538,27 @@ productDeleteBtn.addEventListener("click", () => {
   });
 });
 
+stockForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  saveStock().catch((error) => {
+    stockMessageEl.textContent = error.message;
+  });
+});
+
+stockResetBtn.addEventListener("click", clearStockForm);
+stockDeleteBtn.addEventListener("click", () => {
+  deleteSelectedStock().catch((error) => {
+    stockMessageEl.textContent = error.message;
+  });
+});
+
+stockEl.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-edit-stock]");
+  if (!button) return;
+  const item = adminStock.find((stock) => stock.stockId === button.dataset.editStock);
+  if (item) fillStockForm(item);
+});
+
 productsEl.addEventListener("click", (event) => {
   const button = event.target.closest("[data-edit-product]");
   if (!button) return;
@@ -412,9 +574,10 @@ usersEl.addEventListener("click", (event) => {
   });
 });
 
-Promise.all([loadSetup(), loadOrders(), loadProducts(), loadUsers()]).catch((error) => {
+Promise.all([loadSetup(), loadOrders(), loadProducts(), loadStock(), loadUsers()]).catch((error) => {
   setupMessageEl.textContent = error.message;
   messageEl.textContent = error.message;
   productMessageEl.textContent = error.message;
+  stockMessageEl.textContent = error.message;
   userMessageEl.textContent = error.message;
 });

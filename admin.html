@@ -21,6 +21,7 @@
       <a href="#setup">Setup</a>
       <a href="#orders">Захиалгууд</a>
       <a href="#products">Бүтээгдэхүүн</a>
+      <a href="#stock">Stock</a>
       <a href="#users">Accounts</a>
     </nav>
   </header>
@@ -160,6 +161,52 @@
         </div>
       </form>
       <div class="admin-product-list" data-admin-products></div>
+    </section>
+
+    <section class="admin-stock" id="stock">
+      <div class="admin-orders-head">
+        <div>
+          <h2>Stock credential</h2>
+          <p data-stock-message>Login/password stock жагсаалт уншиж байна...</p>
+        </div>
+      </div>
+      <form class="stock-admin-form" data-stock-form>
+        <input type="hidden" name="stockId">
+        <label>
+          Бүтээгдэхүүн
+          <select name="productId" data-stock-product required></select>
+        </label>
+        <label>
+          Нэвтрэх нэр / email
+          <input name="login" type="text" placeholder="account@example.com" required>
+        </label>
+        <label>
+          Password
+          <input name="password" type="text" placeholder="түр password" required>
+        </label>
+        <label>
+          Дуусах хугацаа
+          <input name="expiresAt" type="date">
+        </label>
+        <label>
+          Төлөв
+          <select name="status">
+            <option value="available">Available</option>
+            <option value="reserved">Reserved</option>
+            <option value="delivered">Delivered</option>
+          </select>
+        </label>
+        <label class="wide-field">
+          Заавар / note
+          <textarea name="note" rows="3" placeholder="Жишээ: Canva.com дээр email/password-р нэвтэрнэ."></textarea>
+        </label>
+        <div class="wide-field product-form-actions">
+          <button class="primary-action" type="submit">Stock хадгалах</button>
+          <button class="secondary-action" type="button" data-stock-reset>Шинэ stock</button>
+          <button class="danger-action is-hidden" type="button" data-stock-delete>Stock устгах</button>
+        </div>
+      </form>
+      <div class="admin-stock-list" data-admin-stock></div>
     </section>
 
     <section class="admin-users" id="users">

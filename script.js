@@ -423,6 +423,7 @@ function renderMyOrders(orders = []) {
     const status = order.publicStatus || {};
     const createdAt = order.createdAt ? new Date(order.createdAt).toLocaleString("mn-MN") : "-";
     const items = (order.items || []).map((item) => `${escapeHtml(item.name)} x ${Number(item.quantity || 0)}`).join(", ");
+    const deliveryItems = order.delivery?.items || [];
 
     return `
       <article class="account-order-card">
@@ -432,6 +433,20 @@ function renderMyOrders(orders = []) {
           <small>${escapeHtml(createdAt)}</small>
         </div>
         <p>${items || "Барааны мэдээлэл алга"}</p>
+        ${deliveryItems.length ? `
+          <div class="account-credential-list">
+            ${deliveryItems.map((item, index) => `
+              <div class="account-credential-card">
+                <strong>${escapeHtml(item.productName || `Эрх ${index + 1}`)}</strong>
+                <span>Login: <code>${escapeHtml(item.login)}</code></span>
+                <span>Password: <code>${escapeHtml(item.password)}</code></span>
+                ${item.expiresAt ? `<span>Дуусах: ${escapeHtml(item.expiresAt)}</span>` : ""}
+                ${item.note ? `<p>${escapeHtml(item.note)}</p>` : ""}
+                <button class="secondary-action compact-action" type="button" data-copy-credential="${encodeURIComponent(`${item.productName || "Digital эрх"}\nLogin: ${item.login}\nPassword: ${item.password}\n${item.note || ""}`)}">Эрх хуулах</button>
+              </div>
+            `).join("")}
+          </div>
+        ` : ""}
         <div class="account-order-foot">
           <span>${money(order.total || 0)}</span>
           <button class="secondary-action compact-action" type="button" data-track-account-order="${escapeHtml(order.orderId)}">Төлөв</button>
@@ -513,6 +528,7 @@ function makeFallbackOrder(payload) {
       label: pricing.promo.label,
       value: pricing.promo.value
     } : null,
+    demoMode: true,
     total: pricing.total,
     payment: {
       provider: "invoice",
@@ -889,11 +905,14 @@ function openOrderModal(data) {
   if (!orderModal) return;
 
   modalOrderId.textContent = data.orderId;
-  modalOrderNote.textContent = `Нэхэмжлэх: ${data.payment?.invoiceId || "-"} · Order ID-гаа хадгалаад төлөвөө шалгаарай.`;
+  modalOrderNote.textContent = data.demoMode
+    ? "Энэ нь local preview demo Order ID. Live сайт дээр захиалга database-д хадгалагдаж, admin Confirm Payment дарсны дараа эрх гарна."
+    : `Нэхэмжлэх: ${data.payment?.invoiceId || "-"} · Төлбөр баталгаажсаны дараа таны account дээр нэвтрэх эрх гарна.`;
   modalOrderSummary.innerHTML = `
     <div><span>Дэд нийт</span><strong>${money(data.subtotal ?? data.total ?? 0)}</strong></div>
     ${data.discount ? `<div><span>${escapeHtml(data.promo?.code || "Promo")}</span><strong>-${money(data.discount)}</strong></div>` : ""}
     <div><span>Төлөх дүн</span><strong>${money(data.total || 0)}</strong></div>
+    <div><span>Дараагийн алхам</span><strong>${data.demoMode ? "Live дээр турших" : "Төлбөрөө баталгаажуулах"}</strong></div>
   `;
   orderModal.classList.add("is-open");
   orderModal.setAttribute("aria-hidden", "false");
@@ -1028,6 +1047,10 @@ loginForm.addEventListener("submit", async (event) => {
 registerForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const formData = new FormData(event.currentTarget);
+  if (formData.get("password") !== formData.get("confirmPassword")) {
+    showToast("Нууц үг хоёр удаа ижил байх хэрэгтэй.");
+    return;
+  }
   try {
     const data = await authPost("/api/auth-register", {
       name: formData.get("name"),
@@ -1052,6 +1075,18 @@ refreshMyOrdersButton?.addEventListener("click", () => {
 });
 
 accountOrdersEl?.addEventListener("click", async (event) => {
+  const credentialButton = event.target.closest("[data-copy-credential]");
+  if (credentialButton) {
+    const text = decodeURIComponent(credentialButton.dataset.copyCredential || "");
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast("Нэвтрэх мэдээлэл хууллаа.");
+    } catch {
+      showToast("Нэвтрэх мэдээллийг гараар хуулна уу.");
+    }
+    return;
+  }
+
   const button = event.target.closest("[data-track-account-order]");
   if (!button) return;
   renderStatus(await checkOrderStatus(button.dataset.trackAccountOrder));

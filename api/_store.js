@@ -31,6 +31,8 @@ const memory = globalThis.__aiMongoliaStore || {
   orderIds: [],
   ideas: [],
   products: null,
+  stock: new Map(),
+  stockIds: [],
   users: new Map(),
   userEmails: [],
   sessions: new Map()
@@ -39,6 +41,8 @@ memory.orders ||= new Map();
 memory.orderIds ||= [];
 memory.ideas ||= [];
 memory.products ||= null;
+memory.stock ||= new Map();
+memory.stockIds ||= [];
 memory.users ||= new Map();
 memory.userEmails ||= [];
 memory.sessions ||= new Map();
@@ -153,6 +157,153 @@ export async function updateOrderStatus(orderId, statusKey) {
   return saveOrder({
     ...order,
     status: status.key
+  });
+}
+
+export async function listStockItems(limit = 200) {
+  if (hasRedis) {
+    const index = await redisCommand(["LRANGE", "stock:index", 0, Math.max(0, limit - 1)]);
+    const ids = Array.isArray(index?.result) ? [...new Set(index.result)] : [];
+    const items = await Promise.all(ids.map((id) => getStockItem(id)));
+    return items.filter(Boolean);
+  }
+
+  return memory.stockIds.slice(0, limit).map((id) => memory.stock.get(id)).filter(Boolean);
+}
+
+export async function getStockItem(stockId) {
+  const id = String(stockId || "").trim();
+  if (!id) return null;
+
+  if (hasRedis) {
+    const data = await redisCommand(["GET", `stock:${id}`]);
+    return data?.result ? JSON.parse(data.result) : null;
+  }
+
+  return memory.stock.get(id) || null;
+}
+
+export async function saveStockItem(item) {
+  const stockId = String(item.stockId || "").trim() || `STK-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+  const existing = await getStockItem(stockId);
+  const nextItem = {
+    ...item,
+    stockId,
+    status: item.status || "available",
+    updatedAt: new Date().toISOString(),
+    createdAt: item.createdAt || existing?.createdAt || new Date().toISOString()
+  };
+
+  if (hasRedis) {
+    await redisCommand(["SET", `stock:${stockId}`, JSON.stringify(nextItem)]);
+    if (!existing) await redisCommand(["LPUSH", "stock:index", stockId]);
+    return nextItem;
+  }
+
+  if (!memory.stock.has(stockId)) {
+    memory.stockIds = [stockId, ...memory.stockIds];
+  }
+  memory.stock.set(stockId, nextItem);
+  return nextItem;
+}
+
+export async function deleteStockItem(stockId) {
+  const item = await getStockItem(stockId);
+  if (!item) return null;
+
+  if (hasRedis) {
+    await redisCommand(["DEL", `stock:${item.stockId}`]);
+    return item;
+  }
+
+  memory.stock.delete(item.stockId);
+  memory.stockIds = memory.stockIds.filter((id) => id !== item.stockId);
+  return item;
+}
+
+export async function confirmPaymentAndAssignStock(orderId) {
+  const order = await getOrder(orderId);
+  if (!order) return null;
+  if (order.status === "cancelled") return order;
+  if (order.delivery?.status === "delivered") {
+    return saveOrder({
+      ...order,
+      status: "ready",
+      payment: {
+        ...(order.payment || {}),
+        confirmedAt: order.payment?.confirmedAt || new Date().toISOString()
+      }
+    });
+  }
+
+  const required = [];
+  (order.items || []).forEach((item) => {
+    const quantity = Math.max(1, Number(item.quantity || 1));
+    for (let index = 0; index < quantity; index += 1) {
+      required.push(item);
+    }
+  });
+
+  const stockItems = await listStockItems(500);
+  const chosen = [];
+  const used = new Set();
+
+  for (const item of required) {
+    const stock = stockItems.find((candidate) => (
+      candidate.status === "available"
+      && candidate.productId === item.id
+      && !used.has(candidate.stockId)
+    ));
+
+    if (!stock) {
+      return saveOrder({
+        ...order,
+        status: "activation_queue",
+        payment: {
+          ...(order.payment || {}),
+          confirmedAt: order.payment?.confirmedAt || new Date().toISOString()
+        },
+        delivery: {
+          status: "waiting_stock",
+          message: "Stock хүрэлцээгүй тул эрх гараар оноох шаардлагатай.",
+          items: order.delivery?.items || []
+        }
+      });
+    }
+
+    used.add(stock.stockId);
+    chosen.push({ stock, orderItem: item });
+  }
+
+  const assignedAt = new Date().toISOString();
+  await Promise.all(chosen.map(({ stock }) => saveStockItem({
+    ...stock,
+    status: "delivered",
+    orderId: order.orderId,
+    assignedAt
+  })));
+
+  return saveOrder({
+    ...order,
+    status: "ready",
+    payment: {
+      ...(order.payment || {}),
+      confirmedAt: order.payment?.confirmedAt || assignedAt
+    },
+    delivery: {
+      status: "delivered",
+      deliveredAt: assignedAt,
+      items: chosen.map(({ stock, orderItem }) => ({
+        stockId: stock.stockId,
+        productId: stock.productId,
+        productName: stock.productName || orderItem.name,
+        login: stock.login,
+        password: stock.password,
+        note: stock.note || "",
+        expiresAt: stock.expiresAt || "",
+        assignedAt
+      }))
+    }
   });
 }
 

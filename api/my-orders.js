@@ -16,7 +16,33 @@ function belongsToUser(order, user) {
   ].some((value) => normalize(value) === email);
 }
 
-function userOrder(order) {
+function canViewDelivery(order, user) {
+  const email = normalize(user?.email);
+  return [order.accountEmail, order.customer?.email].some((value) => normalize(value) === email);
+}
+
+function userDelivery(order, user) {
+  if (order.status !== "ready" || order.delivery?.status !== "delivered" || !canViewDelivery(order, user)) {
+    return {
+      status: order.delivery?.status || "pending",
+      items: []
+    };
+  }
+
+  return {
+    status: "delivered",
+    deliveredAt: order.delivery.deliveredAt || "",
+    items: (order.delivery.items || []).map((item) => ({
+      productName: item.productName,
+      login: item.login,
+      password: item.password,
+      note: item.note || "",
+      expiresAt: item.expiresAt || ""
+    }))
+  };
+}
+
+function userOrder(order, user) {
   return {
     orderId: order.orderId,
     status: order.status,
@@ -27,6 +53,7 @@ function userOrder(order) {
       provider: order.payment?.provider || "invoice",
       invoiceId: order.payment?.invoiceId || ""
     },
+    delivery: userDelivery(order, user),
     createdAt: order.createdAt,
     updatedAt: order.updatedAt
   };
@@ -56,6 +83,6 @@ export default async function handler(req, res) {
   const orders = await listOrders(100);
   res.status(200).json({
     ok: true,
-    orders: orders.filter((order) => belongsToUser(order, user)).map(userOrder)
+    orders: orders.filter((order) => belongsToUser(order, user)).map((order) => userOrder(order, user))
   });
 }

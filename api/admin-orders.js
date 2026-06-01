@@ -1,5 +1,5 @@
 import { isAdminRequest } from "./_auth.js";
-import { getStorageMode, listOrders, publicOrder, updateOrderStatus } from "./_store.js";
+import { confirmPaymentAndAssignStock, getStorageMode, listOrders, publicOrder, updateOrderStatus } from "./_store.js";
 
 function readBody(req) {
   return new Promise((resolve, reject) => {
@@ -52,7 +52,9 @@ export default async function handler(req, res) {
 
   if (req.method === "PATCH") {
     const payload = await readBody(req);
-    const order = await updateOrderStatus(payload.orderId, payload.status);
+    const order = payload.action === "confirm_payment"
+      ? await confirmPaymentAndAssignStock(payload.orderId)
+      : await updateOrderStatus(payload.orderId, payload.status);
 
     if (!order) {
       res.status(404).json({ error: "Захиалга олдсонгүй" });
