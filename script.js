@@ -86,6 +86,15 @@ const filterButtons = document.querySelectorAll("[data-filter]");
 const searchInput = document.querySelector("[data-search]");
 const themeButtons = document.querySelectorAll("[data-theme-option]");
 const toast = document.querySelector("[data-toast]");
+const accountDrawer = document.querySelector("[data-account-drawer]");
+const accountStatus = document.querySelector("[data-account-status]");
+const accountButton = document.querySelector("[data-open-account]");
+const adminLink = document.querySelector("[data-admin-link]");
+const accountAdminLink = document.querySelector("[data-account-admin-link]");
+const loginForm = document.querySelector("[data-login-form]");
+const registerForm = document.querySelector("[data-register-form]");
+const logoutButton = document.querySelector("[data-logout]");
+const accountTabs = document.querySelectorAll("[data-account-tab]");
 const recommendationResult = document.querySelector("[data-recommendation-result]");
 const statusResult = document.querySelector("[data-status-result]");
 const orderResult = document.querySelector("[data-order-result]");
@@ -93,11 +102,13 @@ const ideaBoard = document.querySelector("[data-idea-board]");
 const CART_STORAGE_KEY = "ai-mongolia-cart-v2";
 const IDEAS_STORAGE_KEY = "ai-mongolia-ideas-v2";
 const THEME_STORAGE_KEY = "ai-mongolia-theme";
+const AUTH_STORAGE_KEY = "ai-mongolia-auth";
 let activeFilter = "all";
 let cart = loadCart();
 let activeTheme = loadTheme();
 let toastTimer;
 let ideas = loadIdeas();
+let auth = loadAuth();
 
 function money(value) {
   return `${formatter.format(value)}₮`;
@@ -200,6 +211,83 @@ function showToast(message) {
   toastTimer = window.setTimeout(() => {
     toast.classList.remove("is-visible");
   }, 2400);
+}
+
+function loadAuth() {
+  try {
+    return JSON.parse(window.localStorage?.getItem(AUTH_STORAGE_KEY) || "null");
+  } catch {
+    return null;
+  }
+}
+
+function saveAuth(nextAuth) {
+  auth = nextAuth;
+  try {
+    if (nextAuth) {
+      window.localStorage?.setItem(AUTH_STORAGE_KEY, JSON.stringify(nextAuth));
+    } else {
+      window.localStorage?.removeItem(AUTH_STORAGE_KEY);
+    }
+  } catch {
+    return;
+  }
+  renderAccount();
+}
+
+function authHeaders() {
+  return auth?.token ? { Authorization: `Bearer ${auth.token}` } : {};
+}
+
+async function authPost(url, payload) {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || "Account request failed");
+  return data;
+}
+
+function openAccount() {
+  accountDrawer.classList.add("is-open");
+  accountDrawer.setAttribute("aria-hidden", "false");
+}
+
+function closeAccount() {
+  accountDrawer.classList.remove("is-open");
+  accountDrawer.setAttribute("aria-hidden", "true");
+}
+
+function setAccountTab(tab) {
+  accountTabs.forEach((button) => button.classList.toggle("is-active", button.dataset.accountTab === tab));
+  loginForm.classList.toggle("is-hidden", tab !== "login");
+  registerForm.classList.toggle("is-hidden", tab !== "register");
+}
+
+function renderAccount() {
+  const user = auth?.user;
+  const canAdmin = Boolean(user?.canAdmin);
+  adminLink.hidden = !canAdmin;
+  accountAdminLink.classList.toggle("is-hidden", !canAdmin);
+  logoutButton.classList.toggle("is-hidden", !user);
+  loginForm.classList.toggle("is-hidden", Boolean(user));
+  registerForm.classList.add("is-hidden");
+  accountButton.textContent = user ? user.name : "Account";
+
+  if (!user) {
+    accountStatus.innerHTML = '<p class="cart-note">Account үүсгээд захиалга бүртгүүлэх, admin эрхтэй бол удирдлагын хэсэг рүү орох боломжтой.</p>';
+    return;
+  }
+
+  accountStatus.innerHTML = `
+    <div class="account-user-card">
+      <strong>${escapeHtml(user.name)}</strong>
+      <span>${escapeHtml(user.email)}</span>
+      <span>${canAdmin ? "Admin эрхтэй account" : "Энгийн хэрэглэгч"}</span>
+    </div>
+  `;
 }
 
 async function postJson(url, payload) {
@@ -547,9 +635,56 @@ document.querySelectorAll("[data-open-cart]").forEach((button) => {
 
 document.querySelector("[data-close-cart]").addEventListener("click", closeCart);
 document.querySelector("[data-copy-order]").addEventListener("click", copyOrder);
+document.querySelector("[data-open-account]").addEventListener("click", openAccount);
+document.querySelector("[data-close-account]").addEventListener("click", closeAccount);
 
 cartDrawer.addEventListener("click", (event) => {
   if (event.target === cartDrawer) closeCart();
+});
+
+accountDrawer.addEventListener("click", (event) => {
+  if (event.target === accountDrawer) closeAccount();
+});
+
+accountTabs.forEach((button) => {
+  button.addEventListener("click", () => setAccountTab(button.dataset.accountTab));
+});
+
+loginForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const formData = new FormData(event.currentTarget);
+  try {
+    const data = await authPost("/api/auth-login", {
+      email: formData.get("email"),
+      password: formData.get("password")
+    });
+    saveAuth({ token: data.token, user: data.user });
+    showToast("Амжилттай нэвтэрлээ.");
+  } catch (error) {
+    showToast(error.message);
+  }
+});
+
+registerForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const formData = new FormData(event.currentTarget);
+  try {
+    const data = await authPost("/api/auth-register", {
+      name: formData.get("name"),
+      email: formData.get("email"),
+      password: formData.get("password")
+    });
+    saveAuth({ token: data.token, user: data.user });
+    showToast(data.user.canAdmin ? "Admin account үүслээ." : "Account амжилттай үүслээ.");
+  } catch (error) {
+    showToast(error.message);
+  }
+});
+
+logoutButton.addEventListener("click", () => {
+  saveAuth(null);
+  setAccountTab("login");
+  showToast("Account-аас гарлаа.");
 });
 
 filterButtons.forEach((button) => {
@@ -640,6 +775,7 @@ document.querySelector("[data-order-form]").addEventListener("submit", async (ev
 });
 
 setTheme(activeTheme);
+renderAccount();
 loadProducts();
 renderCart();
 loadStarterIdeas();

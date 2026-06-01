@@ -22,11 +22,15 @@
       <a href="#payment">Төлбөр</a>
       <a href="#brainstorm">Санал</a>
       <a href="#contact">Холбоо</a>
+      <a href="/admin.html" data-admin-link hidden>Admin</a>
     </nav>
-    <button class="cart-button" type="button" data-open-cart aria-label="Сагс нээх">
-      <span>Сагс</span>
-      <strong data-cart-count>0</strong>
-    </button>
+    <div class="header-actions">
+      <button class="account-button" type="button" data-open-account>Account</button>
+      <button class="cart-button" type="button" data-open-cart aria-label="Сагс нээх">
+        <span>Сагс</span>
+        <strong data-cart-count>0</strong>
+      </button>
+    </div>
   </header>
 
   <main id="top">
@@ -248,6 +252,53 @@
       <button class="primary-action full-width" type="button" data-copy-order>Захиалгын текст гаргах</button>
       <div class="copy-result" data-copy-result aria-live="polite"></div>
       <p class="cart-note">Хуулсан захиалгаа Facebook message эсвэл email-р илгээж баталгаажуулна.</p>
+    </div>
+  </aside>
+
+  <aside class="account-drawer" data-account-drawer aria-hidden="true">
+    <div class="account-panel">
+      <div class="cart-head">
+        <div>
+          <p class="eyebrow">Account</p>
+          <h2>Нэвтрэх / бүртгүүлэх</h2>
+        </div>
+        <button class="icon-button" type="button" data-close-account aria-label="Account хаах">×</button>
+      </div>
+      <div class="account-status" data-account-status>
+        <p class="cart-note">Account үүсгээд захиалга бүртгүүлэх, admin эрхтэй бол удирдлагын хэсэг рүү орох боломжтой.</p>
+      </div>
+      <div class="account-tabs" role="tablist" aria-label="Account action">
+        <button class="is-active" type="button" data-account-tab="login">Нэвтрэх</button>
+        <button type="button" data-account-tab="register">Бүртгүүлэх</button>
+      </div>
+      <form class="account-form" data-login-form>
+        <label>
+          Email
+          <input name="email" type="email" placeholder="you@example.com" required>
+        </label>
+        <label>
+          Нууц үг
+          <input name="password" type="password" placeholder="Нууц үг" required>
+        </label>
+        <button class="primary-action full-width" type="submit">Нэвтрэх</button>
+      </form>
+      <form class="account-form is-hidden" data-register-form>
+        <label>
+          Нэр
+          <input name="name" type="text" placeholder="Таны нэр" required>
+        </label>
+        <label>
+          Email
+          <input name="email" type="email" placeholder="you@example.com" required>
+        </label>
+        <label>
+          Нууц үг
+          <input name="password" type="password" placeholder="Доод тал нь 6 тэмдэгт" minlength="6" required>
+        </label>
+        <button class="primary-action full-width" type="submit">Account үүсгэх</button>
+      </form>
+      <button class="secondary-action full-width is-hidden" type="button" data-logout>Гарах</button>
+      <a class="primary-action full-width is-hidden" href="/admin.html" data-account-admin-link>Admin Panel рүү орох</a>
     </div>
   </aside>
 

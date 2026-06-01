@@ -1,3 +1,4 @@
+import { isAdminRequest } from "./_auth.js";
 import { defaultProducts } from "./_products.js";
 import { getStorageMode, listProducts, upsertProduct } from "./_store.js";
 
@@ -16,12 +17,6 @@ function readBody(req) {
     });
     req.on("error", reject);
   });
-}
-
-function isAuthorized(req) {
-  const pin = globalThis.process?.env?.ADMIN_PIN || "";
-  if (!pin) return true;
-  return req.headers?.["x-admin-pin"] === pin;
 }
 
 function slugify(value) {
@@ -61,15 +56,15 @@ function normalizeProduct(payload) {
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-admin-pin");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-admin-pin, Authorization");
 
   if (req.method === "OPTIONS") {
     res.status(204).end();
     return;
   }
 
-  if (!isAuthorized(req)) {
-    res.status(401).json({ error: "Admin PIN буруу байна" });
+  if (!(await isAdminRequest(req))) {
+    res.status(401).json({ error: "Admin эрх шаардлагатай" });
     return;
   }
 

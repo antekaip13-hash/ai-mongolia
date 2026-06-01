@@ -36,6 +36,14 @@ function getPin() {
   return adminForm.elements.pin.value.trim() || window.localStorage.getItem("ai-mongolia-admin-pin") || "";
 }
 
+function getAuthToken() {
+  try {
+    return JSON.parse(window.localStorage.getItem("ai-mongolia-auth") || "null")?.token || "";
+  } catch {
+    return "";
+  }
+}
+
 function savePin(pin) {
   if (pin) window.localStorage.setItem("ai-mongolia-admin-pin", pin);
 }
@@ -47,6 +55,7 @@ async function adminFetch(url, options = {}) {
     headers: {
       "Content-Type": "application/json",
       ...(pin ? { "x-admin-pin": pin } : {}),
+      ...(getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {}),
       ...(options.headers || {})
     }
   });

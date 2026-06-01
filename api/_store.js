@@ -30,8 +30,18 @@ const memory = globalThis.__aiMongoliaStore || {
   orders: new Map(),
   orderIds: [],
   ideas: [],
-  products: null
+  products: null,
+  users: new Map(),
+  userEmails: [],
+  sessions: new Map()
 };
+memory.orders ||= new Map();
+memory.orderIds ||= [];
+memory.ideas ||= [];
+memory.products ||= null;
+memory.users ||= new Map();
+memory.userEmails ||= [];
+memory.sessions ||= new Map();
 globalThis.__aiMongoliaStore = memory;
 
 async function redisCommand(command) {
@@ -195,4 +205,75 @@ export async function upsertProduct(product, defaultProducts) {
 
   await saveProducts(nextProducts);
   return nextProducts.find((item) => item.id === product.id);
+}
+
+export async function countUsers() {
+  if (hasRedis) {
+    const data = await redisCommand(["LLEN", "users:index"]);
+    return Number(data?.result || 0);
+  }
+
+  return memory.userEmails.length;
+}
+
+export async function getUserByEmail(email) {
+  const key = String(email || "").trim().toLowerCase();
+  if (!key) return null;
+
+  if (hasRedis) {
+    const data = await redisCommand(["GET", `user:${key}`]);
+    return data?.result ? JSON.parse(data.result) : null;
+  }
+
+  return memory.users.get(key) || null;
+}
+
+export async function saveUser(user) {
+  const email = String(user.email || "").trim().toLowerCase();
+  const nextUser = {
+    ...user,
+    email,
+    updatedAt: new Date().toISOString()
+  };
+
+  if (hasRedis) {
+    const exists = await getUserByEmail(email);
+    await redisCommand(["SET", `user:${email}`, JSON.stringify(nextUser)]);
+    if (!exists) await redisCommand(["LPUSH", "users:index", email]);
+    return nextUser;
+  }
+
+  if (!memory.users.has(email)) memory.userEmails = [email, ...memory.userEmails];
+  memory.users.set(email, nextUser);
+  return nextUser;
+}
+
+export async function createSession(token, email) {
+  const session = {
+    token,
+    email: String(email || "").trim().toLowerCase(),
+    createdAt: new Date().toISOString()
+  };
+
+  if (hasRedis) {
+    await redisCommand(["SET", `session:${token}`, JSON.stringify(session)]);
+    return session;
+  }
+
+  memory.sessions.set(token, session);
+  return session;
+}
+
+export async function getSessionUser(token) {
+  if (!token) return null;
+
+  if (hasRedis) {
+    const data = await redisCommand(["GET", `session:${token}`]);
+    if (!data?.result) return null;
+    const session = JSON.parse(data.result);
+    return getUserByEmail(session.email);
+  }
+
+  const session = memory.sessions.get(token);
+  return session ? getUserByEmail(session.email) : null;
 }
