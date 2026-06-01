@@ -308,7 +308,7 @@ async function loadProducts() {
 
 async function loadStock() {
   stockMessageEl.textContent = "Stock credential уншиж байна...";
-  const data = await adminFetch("/api/admin-stock");
+  const data = await adminFetch("/api/admin-products?resource=stock");
   renderStock(data);
 }
 
@@ -384,7 +384,7 @@ async function saveStock() {
     note: formData.get("note")
   };
 
-  await adminFetch("/api/admin-stock", {
+  await adminFetch("/api/admin-products?resource=stock", {
     method: stock.stockId ? "PATCH" : "POST",
     body: JSON.stringify(stock)
   });
@@ -398,7 +398,7 @@ async function deleteSelectedStock() {
   if (!stockId) return;
   if (!window.confirm("Энэ stock credential-ийг устгах уу?")) return;
 
-  await adminFetch("/api/admin-stock", {
+  await adminFetch("/api/admin-products?resource=stock", {
     method: "DELETE",
     body: JSON.stringify({ stockId })
   });
