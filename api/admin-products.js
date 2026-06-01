@@ -1,6 +1,6 @@
 import { isAdminRequest } from "./_auth.js";
 import { defaultProducts } from "./_products.js";
-import { getStorageMode, listProducts, upsertProduct } from "./_store.js";
+import { deleteProduct, getStorageMode, listProducts, upsertProduct } from "./_store.js";
 
 function readBody(req) {
   return new Promise((resolve, reject) => {
@@ -55,7 +55,7 @@ function normalizeProduct(payload) {
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-admin-pin, Authorization");
 
   if (req.method === "OPTIONS") {
@@ -93,6 +93,22 @@ export default async function handler(req, res) {
     res.status(200).json({
       ok: true,
       product: await upsertProduct(product, defaultProducts)
+    });
+    return;
+  }
+
+  if (req.method === "DELETE") {
+    const payload = await readBody(req);
+    const product = await deleteProduct(payload.id, defaultProducts);
+
+    if (!product) {
+      res.status(404).json({ error: "Бүтээгдэхүүн олдсонгүй" });
+      return;
+    }
+
+    res.status(200).json({
+      ok: true,
+      product
     });
     return;
   }

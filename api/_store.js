@@ -67,6 +67,17 @@ export function getStorageMode() {
   return hasRedis ? "redis" : "memory";
 }
 
+export function getStorageHealth() {
+  return {
+    storageMode: getStorageMode(),
+    hasDatabase: hasRedis,
+    hasAdminPin: Boolean(env.ADMIN_PIN),
+    hasAuthSecret: Boolean(env.AUTH_SECRET),
+    hasKvUrl: Boolean(redisUrl),
+    hasKvToken: Boolean(redisToken)
+  };
+}
+
 export function getStatusMeta(statusKey) {
   return statusMap[statusKey] || statusMap.pending_payment;
 }
@@ -205,6 +216,18 @@ export async function upsertProduct(product, defaultProducts) {
 
   await saveProducts(nextProducts);
   return nextProducts.find((item) => item.id === product.id);
+}
+
+export async function deleteProduct(productId, defaultProducts) {
+  const id = String(productId || "").trim();
+  if (!id) return null;
+
+  const products = await listProducts(defaultProducts);
+  const product = products.find((item) => item.id === id);
+  if (!product) return null;
+
+  await saveProducts(products.filter((item) => item.id !== id));
+  return product;
 }
 
 export async function countUsers() {

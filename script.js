@@ -81,6 +81,7 @@ const cartItems = document.querySelector("[data-cart-items]");
 const cartTotal = document.querySelector("[data-cart-total]");
 const cartCount = document.querySelector("[data-cart-count]");
 const copyResult = document.querySelector("[data-copy-result]");
+const checkoutButton = document.querySelector("[data-go-checkout]");
 const mobileCartTotal = document.querySelector("[data-mobile-cart-total]");
 const filterButtons = document.querySelectorAll("[data-filter]");
 const searchInput = document.querySelector("[data-search]");
@@ -98,6 +99,7 @@ const accountTabs = document.querySelectorAll("[data-account-tab]");
 const recommendationResult = document.querySelector("[data-recommendation-result]");
 const statusResult = document.querySelector("[data-status-result]");
 const orderResult = document.querySelector("[data-order-result]");
+const orderForm = document.querySelector("[data-order-form]");
 const ideaBoard = document.querySelector("[data-idea-board]");
 const CART_STORAGE_KEY = "ai-mongolia-cart-v2";
 const IDEAS_STORAGE_KEY = "ai-mongolia-ideas-v2";
@@ -288,6 +290,14 @@ function renderAccount() {
       <span>${canAdmin ? "Admin эрхтэй account" : "Энгийн хэрэглэгч"}</span>
     </div>
   `;
+  prefillOrderForm();
+}
+
+function prefillOrderForm() {
+  const user = auth?.user;
+  if (!user || !orderForm) return;
+  if (!orderForm.elements.name.value) orderForm.elements.name.value = user.name || "";
+  if (!orderForm.elements.phone.value) orderForm.elements.phone.value = user.email || "";
 }
 
 async function refreshAuth() {
@@ -521,6 +531,18 @@ function copyOrder() {
     });
 }
 
+function goToCheckout() {
+  if (!cart.length) {
+    showToast("Эхлээд сагсанд бүтээгдэхүүн нэмээрэй.");
+    return;
+  }
+
+  closeCart();
+  prefillOrderForm();
+  document.querySelector("#contact").scrollIntoView({ behavior: "smooth" });
+  orderForm?.elements.name?.focus({ preventScroll: true });
+}
+
 function recommendBundle(goal, budget) {
   if (goal === "business") return products.find((product) => product.id === "business-starter");
   if (goal === "video") return budget === "starter"
@@ -658,6 +680,7 @@ document.querySelectorAll("[data-open-cart]").forEach((button) => {
 
 document.querySelector("[data-close-cart]").addEventListener("click", closeCart);
 document.querySelector("[data-copy-order]").addEventListener("click", copyOrder);
+checkoutButton.addEventListener("click", goToCheckout);
 document.querySelector("[data-open-account]").addEventListener("click", openAccount);
 document.querySelector("[data-close-account]").addEventListener("click", closeAccount);
 

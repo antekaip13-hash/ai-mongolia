@@ -9,8 +9,11 @@ const productForm = document.querySelector("[data-product-form]");
 const productsEl = document.querySelector("[data-admin-products]");
 const productMessageEl = document.querySelector("[data-product-message]");
 const productResetBtn = document.querySelector("[data-product-reset]");
+const productDeleteBtn = document.querySelector("[data-product-delete]");
 const usersEl = document.querySelector("[data-admin-users]");
 const userMessageEl = document.querySelector("[data-user-message]");
+const setupChecksEl = document.querySelector("[data-setup-checks]");
+const setupMessageEl = document.querySelector("[data-setup-message]");
 const formatter = new Intl.NumberFormat("mn-MN");
 let adminProducts = [];
 let adminUsers = [];
@@ -66,10 +69,30 @@ async function adminFetch(url, options = {}) {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error(data.error || "Admin эрхээр нэвтэрнэ үү эсвэл Admin PIN оруулна уу.");
+    }
+    if (response.status === 404) {
+      throw new Error("Local preview дээр API ажиллахгүй байна. Vercel live deploy эсвэл vercel dev ашиглаж шалгана уу.");
+    }
     throw new Error(data.error || "Admin request failed");
   }
 
   return data;
+}
+
+function renderSetup(data) {
+  const checks = data.checks || [];
+  setupMessageEl.textContent = data.productionReady
+    ? "Production тохиргоо бүрэн байна."
+    : "Доорх тохиргоонуудыг Vercel Environment Variables дээр гүйцээх хэрэгтэй.";
+  setupChecksEl.innerHTML = checks.map((check) => `
+    <article class="setup-card ${check.ok ? "is-ok" : "is-missing"}">
+      <span>${check.ok ? "Бэлэн" : "Дутуу"}</span>
+      <strong>${escapeHtml(check.label)}</strong>
+      <p>${escapeHtml(check.detail)}</p>
+    </article>
+  `).join("");
 }
 
 function renderOrder(order) {
@@ -183,6 +206,12 @@ async function loadProducts() {
   renderProducts(data);
 }
 
+async function loadSetup() {
+  setupMessageEl.textContent = "Production тохиргоо шалгаж байна...";
+  const data = await adminFetch("/api/admin-health");
+  renderSetup(data);
+}
+
 async function loadUsers() {
   userMessageEl.textContent = "Account permission уншиж байна...";
   const data = await adminFetch("/api/admin-users");
@@ -201,6 +230,7 @@ function fillProductForm(product) {
   productForm.elements.color.value = product.color || "linear-gradient(135deg, #14775c, #386f8e)";
   productForm.elements.description.value = product.description || "";
   productForm.elements.benefits.value = (product.benefits || []).join("\n");
+  productDeleteBtn.classList.remove("is-hidden");
   productMessageEl.textContent = `${product.name} бүтээгдэхүүнийг засаж байна.`;
 }
 
@@ -210,6 +240,7 @@ function clearProductForm() {
   productForm.elements.color.value = "linear-gradient(135deg, #14775c, #386f8e)";
   productForm.elements.rating.value = "4.9";
   productForm.elements.stock.value = "Идэвхжүүлэлт";
+  productDeleteBtn.classList.add("is-hidden");
   productMessageEl.textContent = "Шинэ бүтээгдэхүүний мэдээлэл оруулна уу.";
 }
 
@@ -239,6 +270,22 @@ async function saveProduct() {
 
   clearProductForm();
   await loadProducts();
+}
+
+async function deleteSelectedProduct() {
+  const id = productForm.elements.id.value;
+  const name = productForm.elements.name.value || id;
+  if (!id) return;
+  if (!window.confirm(`${name} бүтээгдэхүүнийг устгах уу?`)) return;
+
+  await adminFetch("/api/admin-products", {
+    method: "DELETE",
+    body: JSON.stringify({ id })
+  });
+
+  clearProductForm();
+  await loadProducts();
+  productMessageEl.textContent = `${name} устгагдлаа.`;
 }
 
 async function loadOrders() {
@@ -275,7 +322,8 @@ async function updateUser(email) {
 
 adminForm.addEventListener("submit", (event) => {
   event.preventDefault();
-  Promise.all([loadOrders(), loadProducts(), loadUsers()]).catch((error) => {
+  Promise.all([loadSetup(), loadOrders(), loadProducts(), loadUsers()]).catch((error) => {
+    setupMessageEl.textContent = error.message;
     messageEl.textContent = error.message;
     productMessageEl.textContent = error.message;
     userMessageEl.textContent = error.message;
@@ -298,6 +346,11 @@ productForm.addEventListener("submit", (event) => {
 });
 
 productResetBtn.addEventListener("click", clearProductForm);
+productDeleteBtn.addEventListener("click", () => {
+  deleteSelectedProduct().catch((error) => {
+    productMessageEl.textContent = error.message;
+  });
+});
 
 productsEl.addEventListener("click", (event) => {
   const button = event.target.closest("[data-edit-product]");
@@ -314,7 +367,8 @@ usersEl.addEventListener("click", (event) => {
   });
 });
 
-Promise.all([loadOrders(), loadProducts(), loadUsers()]).catch((error) => {
+Promise.all([loadSetup(), loadOrders(), loadProducts(), loadUsers()]).catch((error) => {
+  setupMessageEl.textContent = error.message;
   messageEl.textContent = error.message;
   productMessageEl.textContent = error.message;
   userMessageEl.textContent = error.message;

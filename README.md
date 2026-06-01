@@ -37,6 +37,7 @@ Vercel дээр `/api` folder автоматаар serverless functions болж
 - `/api/products`: дэлгүүрийн бүтээгдэхүүний catalog буцаана
 - `/api/admin-products`: admin panel-аас бүтээгдэхүүн нэмэх, үнэ, зураг, хугацаа, тайлбар засах route
 - `/api/admin-users`: admin panel-аас account жагсаах, user/admin permission солих route
+- `/api/admin-health`: admin panel дээр production env/database readiness шалгах route
 
 ## Admin dashboard
 
@@ -54,6 +55,7 @@ Account permission:
 - Дараагийн account-ууд `user` эрхтэй болно.
 - Admin Panel дотроос account бүрийн role-г `user` эсвэл `admin` болгож сольж болно.
 - `AUTH_SECRET` болон `ADMIN_PIN`-г Vercel Environment Variables дээр production, preview, development орчинд ижил тавина.
+- Admin Panel-ийн `Production setup` хэсэг database, admin pin, auth secret бүрэн эсэхийг харуулна.
 
 ## Database тохиргоо
 
