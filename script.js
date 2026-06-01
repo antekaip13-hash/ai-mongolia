@@ -87,6 +87,7 @@ const filterButtons = document.querySelectorAll("[data-filter]");
 const searchInput = document.querySelector("[data-search]");
 const themeButtons = document.querySelectorAll("[data-theme-option]");
 const toast = document.querySelector("[data-toast]");
+const heroSpotlight = document.querySelector("[data-hero-spotlight]");
 const accountDrawer = document.querySelector("[data-account-drawer]");
 const accountStatus = document.querySelector("[data-account-status]");
 const accountButton = document.querySelector("[data-open-account]");
@@ -114,6 +115,26 @@ let activeTheme = loadTheme();
 let toastTimer;
 let ideas = loadIdeas();
 let auth = loadAuth();
+const productMerchandising = {
+  "design-video-bundle": {
+    label: "Winner Product",
+    salePercent: 18,
+    originalPrice: 72900,
+    note: "Canva + CapCut-ийг хамтад нь авахад илүү хэмнэлттэй."
+  },
+  "canva-pro": {
+    label: "Sale",
+    salePercent: 10,
+    originalPrice: 32900,
+    note: "Постер, presentation, social пост хийхэд хамгийн амархан эхлэл."
+  },
+  "business-starter": {
+    label: "New",
+    salePercent: 12,
+    originalPrice: 89900,
+    note: "Шинэ page, постер, caption-аа нэг дор эхлүүлэх багц."
+  }
+};
 
 function money(value) {
   return `${formatter.format(value)}₮`;
@@ -146,6 +167,14 @@ function safeProductColor(value) {
   if (color.startsWith("linear-gradient(") || color.startsWith("radial-gradient(")) return color;
   if (/^#[0-9a-f]{3,8}$/i.test(color)) return color;
   return "linear-gradient(135deg, #14775c, #386f8e)";
+}
+
+function withProductMerch(product) {
+  const merch = {
+    ...(productMerchandising[product.id] || {}),
+    ...(product.merch || {})
+  };
+  return { ...product, merch };
 }
 
 function loadCart() {
@@ -415,7 +444,7 @@ function makeFallbackOrder(payload) {
 
 function renderProducts() {
   const searchTerm = searchInput.value.trim().toLowerCase();
-  const visibleProducts = products.filter((product) => {
+  const visibleProducts = products.map(withProductMerch).filter((product) => {
     const haystack = `${product.name} ${product.category} ${product.description} ${product.benefits.join(" ")}`.toLowerCase();
     const matchesFilter = activeFilter === "all" || product.category === activeFilter;
     const matchesSearch = !searchTerm || haystack.includes(searchTerm);
@@ -428,8 +457,9 @@ function renderProducts() {
   }
 
   grid.innerHTML = visibleProducts.map((product) => `
-    <article class="product-card">
+    <article class="product-card ${product.merch?.salePercent ? "has-sale" : ""}">
       <div class="product-thumb" style="--thumb-bg: ${safeProductColor(product.color)}">
+        ${product.merch?.label ? `<span class="product-sale-chip">${escapeHtml(product.merch.label)}</span>` : ""}
         ${safeImageUrl(product.image)
           ? `<img class="product-image" src="${escapeHtml(safeImageUrl(product.image))}" alt="${escapeHtml(product.name)}">`
           : `<span>${escapeHtml(product.category)}</span>`}
@@ -437,8 +467,12 @@ function renderProducts() {
       <div class="product-body">
         <div class="product-meta">
           <span class="category">${escapeHtml(product.term)}</span>
-          <span class="price">${money(product.price)}</span>
+          <span class="price">
+            ${product.merch?.originalPrice ? `<small>${money(product.merch.originalPrice)}</small>` : ""}
+            ${money(product.price)}
+          </span>
         </div>
+        ${product.merch?.salePercent ? `<div class="sale-line">${product.merch.salePercent}% OFF · ${escapeHtml(product.merch.note || "Онцлох санал")}</div>` : ""}
         <h3>${escapeHtml(product.name)}</h3>
         <p>${escapeHtml(product.description)}</p>
         <ul class="product-benefits">
@@ -457,6 +491,26 @@ function renderProducts() {
   `).join("");
 }
 
+function renderHeroSpotlight() {
+  if (!heroSpotlight) return;
+  const merchProducts = products.map(withProductMerch);
+  const spotlight = merchProducts.find((product) => product.merch?.label === "Winner Product")
+    || merchProducts.find((product) => product.merch?.salePercent)
+    || withProductMerch(products[0] || defaultProducts[0]);
+
+  heroSpotlight.innerHTML = `
+    <span class="sale-chip">${escapeHtml(spotlight.merch?.label || "Онцлох багц")}</span>
+    <strong>${escapeHtml(spotlight.name)}</strong>
+    <p>${escapeHtml(spotlight.merch?.note || spotlight.description)}</p>
+    <div class="spotlight-price">
+      ${spotlight.merch?.originalPrice ? `<small>${money(spotlight.merch.originalPrice)}</small>` : ""}
+      <span>${money(spotlight.price)}</span>
+      ${spotlight.merch?.salePercent ? `<em>${spotlight.merch.salePercent}% OFF</em>` : ""}
+    </div>
+    <button class="spotlight-button" type="button" data-spotlight-add="${escapeHtml(spotlight.id)}">Сагсанд нэмэх</button>
+  `;
+}
+
 async function loadProducts() {
   try {
     const response = await fetch("/api/products");
@@ -468,6 +522,7 @@ async function loadProducts() {
   }
 
   renderProducts();
+  renderHeroSpotlight();
 }
 
 function renderCart() {
@@ -724,6 +779,11 @@ async function loadStarterIdeas() {
 grid.addEventListener("click", (event) => {
   const button = event.target.closest("[data-add]");
   if (button) addToCart(button.dataset.add);
+});
+
+heroSpotlight?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-spotlight-add]");
+  if (button) addToCart(button.dataset.spotlightAdd);
 });
 
 cartItems.addEventListener("click", (event) => {
