@@ -119,6 +119,7 @@ function renderOrder(order) {
         <span>Холбоо: <strong>${order.customer?.phone || "-"}</strong></span>
         <span>Account: <strong>${order.accountEmail || order.customer?.email || "-"}</strong></span>
         <span>Бараа: <strong>${items || "-"}</strong></span>
+        <span>Promo: <strong>${order.promo?.code ? `${order.promo.code} (-${money(order.discount || 0)})` : "-"}</strong></span>
       </div>
       <div class="admin-order-actions">
         <select data-status-select="${order.orderId}" aria-label="${order.orderId} төлөв солих">

@@ -79,9 +79,14 @@ const grid = document.querySelector("[data-product-grid]");
 const cartDrawer = document.querySelector("[data-cart-drawer]");
 const cartItems = document.querySelector("[data-cart-items]");
 const cartTotal = document.querySelector("[data-cart-total]");
+const cartSubtotal = document.querySelector("[data-cart-subtotal]");
+const cartDiscount = document.querySelector("[data-cart-discount]");
+const cartDiscountRow = document.querySelector("[data-cart-discount-row]");
 const cartCount = document.querySelector("[data-cart-count]");
 const copyResult = document.querySelector("[data-copy-result]");
 const checkoutButton = document.querySelector("[data-go-checkout]");
+const promoForm = document.querySelector("[data-promo-form]");
+const promoMessage = document.querySelector("[data-promo-message]");
 const mobileCartTotal = document.querySelector("[data-mobile-cart-total]");
 const filterButtons = document.querySelectorAll("[data-filter]");
 const searchInput = document.querySelector("[data-search]");
@@ -104,13 +109,24 @@ const recommendationResult = document.querySelector("[data-recommendation-result
 const statusResult = document.querySelector("[data-status-result]");
 const orderResult = document.querySelector("[data-order-result]");
 const orderForm = document.querySelector("[data-order-form]");
+const checkoutSummary = document.querySelector("[data-checkout-summary]");
+const orderModal = document.querySelector("[data-order-modal]");
+const modalOrderId = document.querySelector("[data-modal-order-id]");
+const modalOrderSummary = document.querySelector("[data-modal-order-summary]");
+const modalOrderNote = document.querySelector("[data-modal-order-note]");
+const copyOrderIdButton = document.querySelector("[data-copy-order-id]");
+const closeOrderModalButton = document.querySelector("[data-close-order-modal]");
+const trackModalOrderButton = document.querySelector("[data-track-modal-order]");
+const continueShoppingButton = document.querySelector("[data-continue-shopping]");
 const ideaBoard = document.querySelector("[data-idea-board]");
 const CART_STORAGE_KEY = "ai-mongolia-cart-v2";
+const PROMO_STORAGE_KEY = "ai-mongolia-promo-v1";
 const IDEAS_STORAGE_KEY = "ai-mongolia-ideas-v2";
 const THEME_STORAGE_KEY = "ai-mongolia-theme";
 const AUTH_STORAGE_KEY = "ai-mongolia-auth";
 let activeFilter = "all";
 let cart = loadCart();
+let activePromoCode = loadPromoCode();
 let activeTheme = loadTheme();
 let toastTimer;
 let ideas = loadIdeas();
@@ -135,6 +151,12 @@ const productMerchandising = {
     note: "Шинэ page, постер, caption-аа нэг дор эхлүүлэх багц."
   }
 };
+const promoCodes = {
+  EVENT20: { code: "EVENT20", label: "Event sale", value: 20, minTotal: 50000 },
+  CREATOR10: { code: "CREATOR10", label: "Creator discount", value: 10, minTotal: 0 },
+  BUNDLE15: { code: "BUNDLE15", label: "Bundle bonus", value: 15, minTotal: 60000 }
+};
+let latestOrder = null;
 
 function money(value) {
   return `${formatter.format(value)}₮`;
@@ -191,6 +213,58 @@ function saveCart() {
   } catch {
     return;
   }
+}
+
+function normalizePromoCode(code) {
+  return String(code || "").trim().toUpperCase().replace(/\s+/g, "");
+}
+
+function loadPromoCode() {
+  try {
+    return normalizePromoCode(window.localStorage?.getItem(PROMO_STORAGE_KEY) || "");
+  } catch {
+    return "";
+  }
+}
+
+function savePromoCode(code) {
+  activePromoCode = normalizePromoCode(code);
+  try {
+    if (activePromoCode) {
+      window.localStorage?.setItem(PROMO_STORAGE_KEY, activePromoCode);
+    } else {
+      window.localStorage?.removeItem(PROMO_STORAGE_KEY);
+    }
+  } catch {
+    return;
+  }
+}
+
+function getCartSubtotal() {
+  return cart.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0);
+}
+
+function getActivePromo(subtotal = getCartSubtotal()) {
+  const code = normalizePromoCode(activePromoCode);
+  const promo = promoCodes[code];
+  if (!promo || subtotal < promo.minTotal) return null;
+
+  return {
+    ...promo,
+    discount: Math.min(Math.round(subtotal * promo.value / 100), subtotal)
+  };
+}
+
+function getCartPricing() {
+  const subtotal = getCartSubtotal();
+  const promo = getActivePromo(subtotal);
+  const discount = promo?.discount || 0;
+  return {
+    subtotal,
+    promo,
+    discount,
+    total: Math.max(0, subtotal - discount)
+  };
 }
 
 function loadIdeas() {
@@ -427,12 +501,19 @@ async function postJson(url, payload, extraHeaders = {}) {
 
 function makeFallbackOrder(payload) {
   const stamp = Date.now().toString(36).toUpperCase();
-  const total = payload.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const pricing = getCartPricing();
   return {
     ok: true,
     orderId: `AIM-${stamp}`,
     status: "pending_payment",
-    total,
+    subtotal: pricing.subtotal,
+    discount: pricing.discount,
+    promo: pricing.promo ? {
+      code: pricing.promo.code,
+      label: pricing.promo.label,
+      value: pricing.promo.value
+    } : null,
+    total: pricing.total,
     payment: {
       provider: "invoice",
       invoiceId: `INV-${stamp}`,
@@ -484,7 +565,7 @@ function renderProducts() {
         </div>
         <div class="product-foot">
           <span class="stock">Цахимаар хүргэнэ</span>
-          <button class="add-button" type="button" data-add="${escapeHtml(product.id)}">Нэмэх</button>
+          <button class="add-button" type="button" data-add="${escapeHtml(product.id)}">Сагслах</button>
         </div>
       </div>
     </article>
@@ -527,11 +608,32 @@ async function loadProducts() {
 
 function renderCart() {
   const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const pricing = getCartPricing();
 
   cartCount.textContent = totalQuantity;
-  cartTotal.textContent = money(totalPrice);
-  mobileCartTotal.textContent = totalQuantity ? `${totalQuantity} эрх · ${money(totalPrice)}` : "0₮";
+  cartSubtotal.textContent = money(pricing.subtotal);
+  cartTotal.textContent = money(pricing.total);
+  cartDiscountRow.classList.toggle("is-hidden", !pricing.discount);
+  cartDiscount.textContent = `-${money(pricing.discount)}`;
+  mobileCartTotal.textContent = totalQuantity ? `${totalQuantity} эрх · ${money(pricing.total)}` : "0₮";
+
+  const promoInput = promoForm?.elements.promo;
+  if (promoInput && document.activeElement !== promoInput) promoInput.value = activePromoCode;
+
+  if (promoMessage) {
+    if (!activePromoCode) {
+      promoMessage.textContent = "Жишээ code: EVENT20, CREATOR10, BUNDLE15";
+    } else if (pricing.promo) {
+      promoMessage.textContent = `${pricing.promo.code} идэвхтэй · ${pricing.promo.value}% хямдарлаа.`;
+    } else {
+      const promo = promoCodes[activePromoCode];
+      promoMessage.textContent = promo
+        ? `${activePromoCode} хэрэглэхийн тулд хамгийн багадаа ${money(promo.minTotal)} байх хэрэгтэй.`
+        : `${activePromoCode} promo code олдсонгүй.`;
+    }
+  }
+
+  renderCheckoutSummary();
 
   if (!cart.length) {
     cartItems.innerHTML = '<p class="cart-note">Сагс хоосон байна.</p>';
@@ -551,6 +653,28 @@ function renderCart() {
       </div>
     </div>
   `).join("");
+}
+
+function renderCheckoutSummary() {
+  if (!checkoutSummary) return;
+  if (!cart.length) {
+    checkoutSummary.innerHTML = `
+      <strong>Сагсны товч мэдээлэл</strong>
+      <p>Эхлээд бүтээгдэхүүнээ сагсанд нэмээд, дараа нь эндээс захиалга үүсгэнэ.</p>
+    `;
+    return;
+  }
+
+  const pricing = getCartPricing();
+  const itemText = cart.map((item) => `${escapeHtml(item.name)} x ${item.quantity}`).join(", ");
+  checkoutSummary.innerHTML = `
+    <strong>Захиалах бараа</strong>
+    <p>${itemText}</p>
+    <div class="checkout-total-line">
+      <span>${pricing.promo ? `${pricing.promo.code} promo ашигласан` : "Promo code ашиглаагүй"}</span>
+      <strong>${money(pricing.total)}</strong>
+    </div>
+  `;
 }
 
 function addToCart(productId) {
@@ -577,6 +701,19 @@ function changeQuantity(productId, amount) {
   renderCart();
 }
 
+function applyPromoCode(code) {
+  savePromoCode(code);
+  renderCart();
+  const pricing = getCartPricing();
+  if (!activePromoCode) {
+    showToast("Promo code ариллаа.");
+  } else if (pricing.promo) {
+    showToast(`${pricing.promo.code} promo идэвхжлээ.`);
+  } else {
+    showToast("Promo code одоогоор тохирохгүй байна.");
+  }
+}
+
 function openCart() {
   cartDrawer.classList.add("is-open");
   cartDrawer.setAttribute("aria-hidden", "false");
@@ -589,7 +726,7 @@ function closeCart() {
 
 function buildOrderText(formData) {
   const lines = cart.map((item) => `- ${item.name} (${item.term || item.category}): ${item.quantity}ш x ${money(item.price)}`);
-  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const pricing = getCartPricing();
   const customer = formData ? [
     `Нэр: ${formData.get("name")}`,
     `Холбоо барих: ${formData.get("phone")}`,
@@ -601,7 +738,8 @@ function buildOrderText(formData) {
     customer,
     "Захиалга:",
     lines.join("\n") || "- Сагс хоосон",
-    `Нийт: ${money(total)}`
+    pricing.promo ? `Promo: ${pricing.promo.code} (-${money(pricing.discount)})` : "",
+    `Төлөх дүн: ${money(pricing.total)}`
   ].filter(Boolean).join("\n");
 }
 
@@ -709,6 +847,7 @@ async function checkOrderStatus(orderId) {
 }
 
 async function createOrder(formData) {
+  const pricing = getCartPricing();
   const payload = {
     customer: {
       name: formData.get("name"),
@@ -722,7 +861,8 @@ async function createOrder(formData) {
       term: item.term || item.category,
       price: item.price,
       quantity: item.quantity
-    }))
+    })),
+    promoCode: pricing.promo?.code || activePromoCode || ""
   };
 
   try {
@@ -737,10 +877,42 @@ function renderOrderResult(data) {
     <div class="order-success">
       <span class="status-pill">Захиалга бүртгэгдлээ</span>
       <strong>${data.orderId}</strong>
-      <p>Төлбөрийн нэхэмжлэх: ${data.payment?.invoiceId || "үүсэж байна"} · Нийт ${money(data.total || 0)}</p>
+      <p>Төлбөрийн нэхэмжлэх: ${data.payment?.invoiceId || "үүсэж байна"} · Төлөх дүн ${money(data.total || 0)}</p>
       <button class="secondary-action" type="button" data-track-created="${data.orderId}">Төлөв шалгах</button>
     </div>
   `;
+  openOrderModal(data);
+}
+
+function openOrderModal(data) {
+  latestOrder = data;
+  if (!orderModal) return;
+
+  modalOrderId.textContent = data.orderId;
+  modalOrderNote.textContent = `Нэхэмжлэх: ${data.payment?.invoiceId || "-"} · Order ID-гаа хадгалаад төлөвөө шалгаарай.`;
+  modalOrderSummary.innerHTML = `
+    <div><span>Дэд нийт</span><strong>${money(data.subtotal ?? data.total ?? 0)}</strong></div>
+    ${data.discount ? `<div><span>${escapeHtml(data.promo?.code || "Promo")}</span><strong>-${money(data.discount)}</strong></div>` : ""}
+    <div><span>Төлөх дүн</span><strong>${money(data.total || 0)}</strong></div>
+  `;
+  orderModal.classList.add("is-open");
+  orderModal.setAttribute("aria-hidden", "false");
+}
+
+function closeOrderModal() {
+  orderModal?.classList.remove("is-open");
+  orderModal?.setAttribute("aria-hidden", "true");
+}
+
+async function copyOrderId() {
+  if (!latestOrder?.orderId) return;
+  const text = latestOrder.orderId;
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast("Order ID хууллаа.");
+  } catch {
+    showToast(`Order ID: ${text}`);
+  }
 }
 
 function renderIdeas() {
@@ -803,8 +975,31 @@ checkoutButton.addEventListener("click", goToCheckout);
 document.querySelector("[data-open-account]").addEventListener("click", openAccount);
 document.querySelector("[data-close-account]").addEventListener("click", closeAccount);
 
+promoForm?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  applyPromoCode(event.currentTarget.elements.promo.value);
+});
+
+copyOrderIdButton?.addEventListener("click", copyOrderId);
+closeOrderModalButton?.addEventListener("click", closeOrderModal);
+continueShoppingButton?.addEventListener("click", () => {
+  closeOrderModal();
+  document.querySelector("#products").scrollIntoView({ behavior: "smooth" });
+});
+
+trackModalOrderButton?.addEventListener("click", async () => {
+  if (!latestOrder?.orderId) return;
+  renderStatus(await checkOrderStatus(latestOrder.orderId));
+  closeOrderModal();
+  document.querySelector("#engine").scrollIntoView({ behavior: "smooth" });
+});
+
 cartDrawer.addEventListener("click", (event) => {
   if (event.target === cartDrawer) closeCart();
+});
+
+orderModal?.addEventListener("click", (event) => {
+  if (event.target === orderModal) closeOrderModal();
 });
 
 accountDrawer.addEventListener("click", (event) => {
@@ -949,6 +1144,9 @@ document.querySelector("[data-order-form]").addEventListener("submit", async (ev
   renderOrderResult(data);
   renderStatus(await checkOrderStatus(data.orderId));
   if (auth?.user) loadMyOrders().catch(() => {});
+  cart = [];
+  saveCart();
+  renderCart();
   showToast("Захиалга амжилттай бүртгэгдлээ.");
 });
 

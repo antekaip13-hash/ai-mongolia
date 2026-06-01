@@ -1,4 +1,5 @@
 import { getRequestUser } from "./_auth.js";
+import { validatePromo } from "./_promos.js";
 import { saveOrder } from "./_store.js";
 
 function readBody(req) {
@@ -44,7 +45,10 @@ export default async function handler(req, res) {
     const items = Array.isArray(payload.items) ? payload.items : [];
     const customer = payload.customer || {};
     const user = await getRequestUser(req);
-    const total = items.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0);
+    const subtotal = items.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0);
+    const promo = validatePromo(payload.promoCode, subtotal);
+    const discount = promo?.discount || 0;
+    const total = Math.max(0, subtotal - discount);
 
     if (!items.length) {
       res.status(400).json({ error: "Cart is empty" });
@@ -68,6 +72,13 @@ export default async function handler(req, res) {
       },
       accountEmail: user?.email || "",
       items,
+      subtotal,
+      discount,
+      promo: promo ? {
+        code: promo.code,
+        label: promo.label,
+        value: promo.value
+      } : null,
       total,
       payment: {
         provider: "invoice",
@@ -82,6 +93,9 @@ export default async function handler(req, res) {
       ok: true,
       orderId: order.orderId,
       status: order.status,
+      subtotal: order.subtotal,
+      discount: order.discount,
+      promo: order.promo,
       total: order.total,
       payment: order.payment,
       nextSteps: [

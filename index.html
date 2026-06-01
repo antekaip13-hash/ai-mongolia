@@ -225,6 +225,10 @@
         </div>
       </div>
       <form class="order-form" data-order-form>
+        <div class="checkout-summary" data-checkout-summary>
+          <strong>Сагсны товч мэдээлэл</strong>
+          <p>Эхлээд сагсанд бүтээгдэхүүн нэмээд эндээс захиалга үүсгэнэ.</p>
+        </div>
         <label>
           Нэр
           <input name="name" type="text" placeholder="Таны нэр" required>
@@ -252,15 +256,40 @@
         </div>
         <button class="icon-button" type="button" data-close-cart aria-label="Сагс хаах">×</button>
       </div>
-      <div class="cart-items" data-cart-items></div>
-      <div class="cart-total">
-        <span>Нийт</span>
-        <strong data-cart-total>0₮</strong>
+      <div class="checkout-steps" aria-label="Захиалгын алхам">
+        <span class="is-active">1. Сонгох</span>
+        <span>2. Мэдээлэл</span>
+        <span>3. Order ID</span>
       </div>
-      <button class="primary-action full-width" type="button" data-copy-order>Захиалгын текст гаргах</button>
-      <button class="secondary-action full-width" type="button" data-go-checkout>Захиалга бүртгүүлэх хэсэг рүү очих</button>
+      <div class="cart-items" data-cart-items></div>
+      <form class="promo-form" data-promo-form>
+        <label>
+          Promo code
+          <span>
+            <input name="promo" type="text" placeholder="EVENT20">
+            <button class="secondary-action compact-action" type="submit">Ашиглах</button>
+          </span>
+        </label>
+        <p data-promo-message>Event үед promo code оруулж хямдрал авна.</p>
+      </form>
+      <div class="cart-summary">
+        <div>
+          <span>Дэд нийт</span>
+          <strong data-cart-subtotal>0₮</strong>
+        </div>
+        <div class="is-hidden" data-cart-discount-row>
+          <span>Хямдрал</span>
+          <strong data-cart-discount>-0₮</strong>
+        </div>
+        <div class="cart-total">
+          <span>Төлөх дүн</span>
+          <strong data-cart-total>0₮</strong>
+        </div>
+      </div>
+      <button class="primary-action full-width" type="button" data-go-checkout>Мэдээлэл бөглөж захиалга үүсгэх</button>
+      <button class="secondary-action full-width" type="button" data-copy-order>Захиалгын текст хуулах</button>
       <div class="copy-result" data-copy-result aria-live="polite"></div>
-      <p class="cart-note">Хуулсан захиалгаа Facebook message эсвэл email-р илгээж баталгаажуулна.</p>
+      <p class="cart-note">Захиалга үүсмэгц Order ID гарч ирнэ. Түүнийг хуулж хадгалаад төлөвөө шалгана.</p>
     </div>
   </aside>
 
@@ -327,6 +356,24 @@
     <span>Сагс</span>
     <strong data-mobile-cart-total>0₮</strong>
   </button>
+
+  <aside class="order-modal" data-order-modal aria-hidden="true">
+    <div class="order-modal-panel" role="dialog" aria-modal="true" aria-labelledby="order-modal-title">
+      <button class="icon-button" type="button" data-close-order-modal aria-label="Order цонх хаах">×</button>
+      <span class="status-pill">Захиалга үүслээ</span>
+      <h2 id="order-modal-title">Order ID-гаа хадгалаарай</h2>
+      <div class="order-code-box">
+        <strong data-modal-order-id>-</strong>
+        <button class="primary-action" type="button" data-copy-order-id>Copy</button>
+      </div>
+      <p data-modal-order-note>Энэ кодоор захиалгын төлөвөө шалгана.</p>
+      <div class="modal-summary" data-modal-order-summary></div>
+      <div class="modal-actions">
+        <button class="secondary-action" type="button" data-track-modal-order>Төлөв шалгах</button>
+        <button class="secondary-action" type="button" data-continue-shopping>Үргэлжлүүлэн үзэх</button>
+      </div>
+    </div>
+  </aside>
 
   <div class="toast" data-toast role="status" aria-live="polite"></div>
 
