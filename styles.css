@@ -1275,7 +1275,8 @@ body[data-theme="night"] .shift-switch button.is-active {
 .admin-hero,
 .admin-summary,
 .admin-warning,
-.admin-orders {
+.admin-orders,
+.admin-users {
   padding: 54px clamp(18px, 5vw, 72px);
 }
 
@@ -1348,7 +1349,8 @@ body[data-theme="night"] .shift-switch button.is-active {
 }
 
 .admin-orders,
-.admin-products {
+.admin-products,
+.admin-users {
   padding-top: 0;
 }
 
@@ -1521,6 +1523,46 @@ body[data-theme="night"] .shift-switch button.is-active {
   color: var(--green);
 }
 
+.admin-user-list {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-user-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--paper);
+}
+
+.admin-user-card h3 {
+  margin: 8px 0 4px;
+}
+
+.admin-user-card p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.admin-user-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.admin-user-actions select {
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0 12px;
+}
+
 @media (max-width: 1120px) {
   .product-grid,
   .workflow-grid,
@@ -1638,18 +1680,21 @@ body[data-theme="night"] .shift-switch button.is-active {
   .admin-summary,
   .admin-warning,
   .admin-products,
+  .admin-users,
   .admin-orders {
     padding: 56px 16px;
   }
 
   .product-admin-form,
-  .admin-product-card {
+  .admin-product-card,
+  .admin-user-card {
     grid-template-columns: 1fr;
   }
 
   .admin-orders-head,
   .admin-order-top,
-  .admin-order-actions {
+  .admin-order-actions,
+  .admin-user-actions {
     display: grid;
     align-items: start;
   }

@@ -216,6 +216,17 @@ export async function countUsers() {
   return memory.userEmails.length;
 }
 
+export async function listUsers(limit = 100) {
+  if (hasRedis) {
+    const data = await redisCommand(["LRANGE", "users:index", 0, Math.max(0, limit - 1)]);
+    const emails = Array.isArray(data?.result) ? [...new Set(data.result)] : [];
+    const users = await Promise.all(emails.map((email) => getUserByEmail(email)));
+    return users.filter(Boolean);
+  }
+
+  return memory.userEmails.slice(0, limit).map((email) => memory.users.get(email)).filter(Boolean);
+}
+
 export async function getUserByEmail(email) {
   const key = String(email || "").trim().toLowerCase();
   if (!key) return null;
@@ -246,6 +257,15 @@ export async function saveUser(user) {
   if (!memory.users.has(email)) memory.userEmails = [email, ...memory.userEmails];
   memory.users.set(email, nextUser);
   return nextUser;
+}
+
+export async function updateUserRole(email, role) {
+  const user = await getUserByEmail(email);
+  if (!user) return null;
+  return saveUser({
+    ...user,
+    role
+  });
 }
 
 export async function createSession(token, email) {

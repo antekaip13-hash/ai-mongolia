@@ -9,8 +9,11 @@ const productForm = document.querySelector("[data-product-form]");
 const productsEl = document.querySelector("[data-admin-products]");
 const productMessageEl = document.querySelector("[data-product-message]");
 const productResetBtn = document.querySelector("[data-product-reset]");
+const usersEl = document.querySelector("[data-admin-users]");
+const userMessageEl = document.querySelector("[data-user-message]");
 const formatter = new Intl.NumberFormat("mn-MN");
 let adminProducts = [];
+let adminUsers = [];
 
 function money(value) {
   return `${formatter.format(Number(value || 0))}₮`;
@@ -145,10 +148,45 @@ function renderProducts(data) {
     : '<p class="cart-note">Бүтээгдэхүүн нэмэх form ашиглана уу.</p>';
 }
 
+function renderUser(user) {
+  return `
+    <article class="admin-user-card">
+      <div>
+        <span class="status-pill">${user.canAdmin ? "Admin" : "User"}</span>
+        <h3>${escapeHtml(user.name || "-")}</h3>
+        <p>${escapeHtml(user.email || "-")}</p>
+      </div>
+      <div class="admin-user-actions">
+        <select data-user-role="${escapeHtml(user.email)}" aria-label="${escapeHtml(user.email)} role солих">
+          <option value="user" ${user.role === "user" ? "selected" : ""}>User</option>
+          <option value="admin" ${user.role === "admin" ? "selected" : ""}>Admin</option>
+        </select>
+        <button class="secondary-action" type="button" data-update-user="${escapeHtml(user.email)}">Эрх хадгалах</button>
+      </div>
+    </article>
+  `;
+}
+
+function renderUsers(data) {
+  adminUsers = data.users || [];
+  userMessageEl.textContent = adminUsers.length
+    ? "Account permission жагсаалт шинэчлэгдлээ."
+    : "Одоогоор account бүртгэгдээгүй байна.";
+  usersEl.innerHTML = adminUsers.length
+    ? adminUsers.map(renderUser).join("")
+    : '<p class="cart-note">Дэлгүүрээс account үүсгэхэд энд харагдана.</p>';
+}
+
 async function loadProducts() {
   productMessageEl.textContent = "Бүтээгдэхүүний мэдээлэл уншиж байна...";
   const data = await adminFetch("/api/admin-products");
   renderProducts(data);
+}
+
+async function loadUsers() {
+  userMessageEl.textContent = "Account permission уншиж байна...";
+  const data = await adminFetch("/api/admin-users");
+  renderUsers(data);
 }
 
 function fillProductForm(product) {
@@ -223,11 +261,24 @@ async function updateStatus(orderId) {
   await loadOrders();
 }
 
+async function updateUser(email) {
+  const select = document.querySelector(`[data-user-role="${CSS.escape(email)}"]`);
+  await adminFetch("/api/admin-users", {
+    method: "PATCH",
+    body: JSON.stringify({
+      email,
+      role: select.value
+    })
+  });
+  await loadUsers();
+}
+
 adminForm.addEventListener("submit", (event) => {
   event.preventDefault();
-  Promise.all([loadOrders(), loadProducts()]).catch((error) => {
+  Promise.all([loadOrders(), loadProducts(), loadUsers()]).catch((error) => {
     messageEl.textContent = error.message;
     productMessageEl.textContent = error.message;
+    userMessageEl.textContent = error.message;
   });
 });
 
@@ -255,7 +306,16 @@ productsEl.addEventListener("click", (event) => {
   if (product) fillProductForm(product);
 });
 
-Promise.all([loadOrders(), loadProducts()]).catch((error) => {
+usersEl.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-update-user]");
+  if (!button) return;
+  updateUser(button.dataset.updateUser).catch((error) => {
+    userMessageEl.textContent = error.message;
+  });
+});
+
+Promise.all([loadOrders(), loadProducts(), loadUsers()]).catch((error) => {
   messageEl.textContent = error.message;
   productMessageEl.textContent = error.message;
+  userMessageEl.textContent = error.message;
 });
