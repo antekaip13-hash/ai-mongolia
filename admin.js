@@ -18,6 +18,7 @@ const stockProductSelect = document.querySelector("[data-stock-product]");
 const stockResetBtn = document.querySelector("[data-stock-reset]");
 const stockDeleteBtn = document.querySelector("[data-stock-delete]");
 const stockMessageEl = document.querySelector("[data-stock-message]");
+const stockOverviewEl = document.querySelector("[data-stock-overview]");
 const stockEl = document.querySelector("[data-admin-stock]");
 const usersEl = document.querySelector("[data-admin-users]");
 const userMessageEl = document.querySelector("[data-user-message]");
@@ -106,10 +107,38 @@ function renderSetup(data) {
   `).join("");
 }
 
+function getStockCount(productId, status = "available") {
+  return adminStock.filter((item) => item.productId === productId && item.status === status).length;
+}
+
+function getOrderStockCheck(order) {
+  if (order.status === "ready" && order.delivery?.items?.length) {
+    return {
+      ready: true,
+      label: "эрх оноогдсон"
+    };
+  }
+
+  const missing = [];
+  const lines = (order.items || []).map((item) => {
+    const needed = Number(item.quantity || 0);
+    const available = getStockCount(item.id, "available");
+    if (available < needed) missing.push(`${item.name}: ${needed - available}`);
+    return `${item.name} ${available}/${needed}`;
+  });
+
+  return {
+    ready: missing.length === 0,
+    label: missing.length ? `дутуу (${missing.join(", ")})` : `бэлэн (${lines.join(", ")})`
+  };
+}
+
 function renderOrder(order) {
   const items = (order.items || []).map((item) => `${item.name} x ${item.quantity}`).join(", ");
   const createdAt = order.createdAt ? new Date(order.createdAt).toLocaleString("mn-MN") : "-";
   const status = order.publicStatus || {};
+  const stockCheck = getOrderStockCheck(order);
+  const canConfirm = order.status === "ready" || stockCheck.ready;
 
   return `
     <article class="admin-order-card">
@@ -127,6 +156,7 @@ function renderOrder(order) {
         <span>Account: <strong>${order.accountEmail || order.customer?.email || "-"}</strong></span>
         <span>Бараа: <strong>${items || "-"}</strong></span>
         <span>Promo: <strong>${order.promo?.code ? `${order.promo.code} (-${money(order.discount || 0)})` : "-"}</strong></span>
+        <span>Stock: <strong class="${stockCheck.ready ? "stock-ok-text" : "stock-warn-text"}">${stockCheck.label}</strong></span>
       </div>
       <div class="admin-order-actions">
         <select data-status-select="${order.orderId}" aria-label="${order.orderId} төлөв солих">
@@ -135,7 +165,7 @@ function renderOrder(order) {
           <option value="ready" ${order.status === "ready" ? "selected" : ""}>Эрх бэлэн болсон</option>
           <option value="cancelled" ${order.status === "cancelled" ? "selected" : ""}>Цуцлагдсан</option>
         </select>
-        <button class="primary-action" type="button" data-confirm-payment="${order.orderId}">Confirm Payment</button>
+        <button class="primary-action" type="button" data-confirm-payment="${order.orderId}" ${canConfirm ? "" : "disabled"}>${stockCheck.ready ? "Confirm Payment" : "Stock дутуу"}</button>
         <button class="secondary-action" type="button" data-update-status="${order.orderId}">Төлөв хадгалах</button>
       </div>
       ${order.delivery?.items?.length ? `
@@ -220,6 +250,8 @@ function renderProduct(product) {
 function renderProducts(data) {
   adminProducts = data.products || [];
   renderStockProductOptions();
+  renderStockOverview();
+  if (adminOrders.length) renderOrderList();
   productMessageEl.textContent = adminProducts.length
     ? "Бүтээгдэхүүний жагсаалт шинэчлэгдлээ."
     : "Одоогоор бүтээгдэхүүн алга.";
@@ -260,6 +292,29 @@ function renderStockItem(item) {
   `;
 }
 
+function renderStockOverview() {
+  if (!stockOverviewEl) return;
+
+  if (!adminProducts.length) {
+    stockOverviewEl.innerHTML = '<p class="cart-note">Эхлээд бүтээгдэхүүний жагсаалт уншина.</p>';
+    return;
+  }
+
+  stockOverviewEl.innerHTML = adminProducts.map((product) => {
+    const available = getStockCount(product.id, "available");
+    const reserved = getStockCount(product.id, "reserved");
+    const delivered = getStockCount(product.id, "delivered");
+
+    return `
+      <article class="stock-overview-card ${available ? "is-ready" : "is-empty"}">
+        <span>${available ? "Ready" : "Empty"}</span>
+        <strong>${escapeHtml(product.name)}</strong>
+        <small>${available} available · ${reserved} reserved · ${delivered} delivered</small>
+      </article>
+    `;
+  }).join("");
+}
+
 function renderStock(data) {
   adminStock = data.stock || [];
   const available = adminStock.filter((item) => item.status === "available").length;
@@ -269,6 +324,8 @@ function renderStock(data) {
   stockEl.innerHTML = adminStock.length
     ? adminStock.map(renderStockItem).join("")
     : '<p class="cart-note">Product сонгоод login/password stock нэмнэ үү.</p>';
+  renderStockOverview();
+  if (adminOrders.length) renderOrderList();
 }
 
 function renderUser(user) {
