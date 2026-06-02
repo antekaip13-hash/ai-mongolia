@@ -379,13 +379,12 @@ async function authPost(url, payload) {
 }
 
 function openAccount() {
-  accountDrawer.classList.add("is-open");
-  accountDrawer.setAttribute("aria-hidden", "false");
+  showView("account");
+  if (auth?.token) loadMyOrders().catch((error) => showToast(error.message));
 }
 
 function closeAccount() {
-  accountDrawer.classList.remove("is-open");
-  accountDrawer.setAttribute("aria-hidden", "true");
+  showView("products");
 }
 
 function setAccountTab(tab) {
@@ -403,7 +402,7 @@ function renderAccount() {
   loginForm.classList.toggle("is-hidden", Boolean(user));
   registerForm.classList.add("is-hidden");
   accountOrdersPanel?.classList.toggle("is-hidden", !user);
-  accountButton.textContent = user ? user.name : "Account";
+  accountButton.textContent = user ? user.name : "Нэвтрэх";
 
   if (!user) {
     accountStatus.innerHTML = '<p class="cart-note">Account үүсгээд захиалга бүртгүүлэх, admin эрхтэй бол удирдлагын хэсэг рүү орох боломжтой.</p>';
@@ -558,7 +557,7 @@ function normalizeView(value) {
   const view = String(value || "").replace("#", "").trim();
   if (view === "shop") return "products";
   if (view === "contact") return "checkout";
-  return ["products", "engine", "payment", "brainstorm", "checkout"].includes(view) ? view : "products";
+  return ["products", "engine", "payment", "brainstorm", "checkout", "account"].includes(view) ? view : "products";
 }
 
 function showView(view, options = {}) {
@@ -1139,8 +1138,8 @@ document.querySelectorAll("[data-open-cart]").forEach((button) => {
 document.querySelector("[data-close-cart]").addEventListener("click", closeCart);
 document.querySelector("[data-copy-order]").addEventListener("click", copyOrder);
 checkoutButton.addEventListener("click", goToCheckout);
-document.querySelector("[data-open-account]").addEventListener("click", openAccount);
-document.querySelector("[data-close-account]").addEventListener("click", closeAccount);
+document.querySelector("[data-open-account]")?.addEventListener("click", openAccount);
+document.querySelector("[data-close-account]")?.addEventListener("click", closeAccount);
 
 promoForm?.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -1169,7 +1168,7 @@ orderModal?.addEventListener("click", (event) => {
   if (event.target === orderModal) closeOrderModal();
 });
 
-accountDrawer.addEventListener("click", (event) => {
+accountDrawer?.addEventListener("click", (event) => {
   if (event.target === accountDrawer) closeAccount();
 });
 
@@ -1238,7 +1237,6 @@ accountOrdersEl?.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-track-account-order]");
   if (!button) return;
   renderStatus(await checkOrderStatus(button.dataset.trackAccountOrder));
-  closeAccount();
   showView("engine");
 });
 
@@ -1338,7 +1336,8 @@ document.querySelector("[data-order-form]").addEventListener("submit", async (ev
 
 setTheme(activeTheme);
 refreshAuth();
-showView(location.hash, { updateHash: false, scroll: false });
+const shouldScrollToInitialView = Boolean(location.hash && location.hash !== "#top");
+showView(location.hash, { updateHash: false, scroll: shouldScrollToInitialView, instant: true });
 loadProducts();
 renderCart();
 loadStarterIdeas();

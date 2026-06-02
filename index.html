@@ -22,10 +22,11 @@
       <a href="#payment" data-view-link="payment">Төлбөр</a>
       <a href="#brainstorm" data-view-link="brainstorm">Санал</a>
       <a href="#checkout" data-view-link="checkout">Захиалга</a>
+      <a href="#account" data-view-link="account">Account</a>
       <a href="/admin.html" data-admin-link hidden>Admin</a>
     </nav>
     <div class="header-actions">
-      <button class="account-button" type="button" data-open-account>Account</button>
+      <button class="account-button" type="button" data-open-account>Нэвтрэх</button>
       <button class="cart-button" type="button" data-open-cart aria-label="Сагс нээх">
         <span>Сагс</span>
         <strong data-cart-count>0</strong>
@@ -106,6 +107,11 @@
         <span>05</span>
         <strong>Захиалга</strong>
         <small>Сагсаа баталгаажуулж Order ID авах</small>
+      </button>
+      <button class="hub-card" type="button" data-view-link="account">
+        <span>06</span>
+        <strong>Account</strong>
+        <small>Нэвтрэх, захиалгаа харах, эрхээ авах</small>
       </button>
     </section>
 
@@ -280,6 +286,89 @@
         <div class="order-result" data-order-result></div>
       </form>
     </section>
+
+    <section class="account-section view-section" id="account" data-view-section="account" hidden>
+      <div class="account-page-copy">
+        <p class="eyebrow">Account</p>
+        <h2>Миний хэсэг</h2>
+        <p>Эндээс account үүсгэж, нэвтэрч, захиалгын төлөв болон stock-оос олгогдсон login/password эрхээ нэг дороос харна.</p>
+        <div class="account-guide">
+          <div>
+            <span>1</span>
+            <strong>Account үүсгэнэ</strong>
+            <p>Нэр, email, нууц үгээр бүртгүүлээд дараагийн захиалга бүр таны account дээр хадгалагдана.</p>
+          </div>
+          <div>
+            <span>2</span>
+            <strong>Захиалга хийнэ</strong>
+            <p>Сагсанд бараагаа нэмээд Order ID авна. Төлбөр баталгаажих хүртэл төлөвөө шалгаж болно.</p>
+          </div>
+          <div>
+            <span>3</span>
+            <strong>Эрхээ авна</strong>
+            <p>Admin stock-оос бараа олгосны дараа login/password нь таны захиалгын карт дээр харагдана.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="account-page-panel">
+        <div class="account-panel">
+          <div class="cart-head">
+            <div>
+              <p class="eyebrow">Нэвтрэх хэсэг</p>
+              <h2>Account</h2>
+            </div>
+            <button class="secondary-action compact-action" type="button" data-close-account>Дэлгүүр рүү буцах</button>
+          </div>
+          <div class="account-status" data-account-status>
+            <p class="cart-note">Account үүсгээд захиалга бүртгүүлэх, admin эрхтэй бол удирдлагын хэсэг рүү орох боломжтой.</p>
+          </div>
+          <div class="account-tabs" role="tablist" aria-label="Account action">
+            <button class="is-active" type="button" data-account-tab="login">Нэвтрэх</button>
+            <button type="button" data-account-tab="register">Бүртгүүлэх</button>
+          </div>
+          <form class="account-form" data-login-form>
+            <label>
+              Email
+              <input name="email" type="email" placeholder="you@example.com" required>
+            </label>
+            <label>
+              Нууц үг
+              <input name="password" type="password" placeholder="Нууц үг" required>
+            </label>
+            <button class="primary-action full-width" type="submit">Нэвтрэх</button>
+          </form>
+          <form class="account-form is-hidden" data-register-form>
+            <label>
+              Нэр
+              <input name="name" type="text" placeholder="Таны нэр" required>
+            </label>
+            <label>
+              Email
+              <input name="email" type="email" placeholder="you@example.com" required>
+            </label>
+            <label>
+              Нууц үг
+              <input name="password" type="password" placeholder="Доод тал нь 6 тэмдэгт" minlength="6" required>
+            </label>
+            <label>
+              Нууц үг давтах
+              <input name="confirmPassword" type="password" placeholder="Нууц үгээ дахин оруулна" minlength="6" required>
+            </label>
+            <button class="primary-action full-width" type="submit">Account үүсгэх</button>
+          </form>
+          <button class="secondary-action full-width is-hidden" type="button" data-logout>Гарах</button>
+          <a class="primary-action full-width is-hidden" href="/admin.html" data-account-admin-link>Admin Panel рүү орох</a>
+          <section class="account-orders is-hidden" data-account-orders-panel>
+            <div class="account-orders-head">
+              <strong>Миний захиалгууд</strong>
+              <button class="secondary-action compact-action" type="button" data-refresh-my-orders>Шинэчлэх</button>
+            </div>
+            <div class="account-order-list" data-account-orders></div>
+          </section>
+        </div>
+      </div>
+    </section>
   </main>
 
   <aside class="cart-drawer" data-cart-drawer aria-hidden="true">
@@ -325,64 +414,6 @@
       <button class="secondary-action full-width" type="button" data-copy-order>Захиалгын текст хуулах</button>
       <div class="copy-result" data-copy-result aria-live="polite"></div>
       <p class="cart-note">Захиалга үүсмэгц Order ID гарч ирнэ. Түүнийг хуулж хадгалаад төлөвөө шалгана.</p>
-    </div>
-  </aside>
-
-  <aside class="account-drawer" data-account-drawer aria-hidden="true">
-    <div class="account-panel">
-      <div class="cart-head">
-        <div>
-          <p class="eyebrow">Account</p>
-          <h2>Нэвтрэх / бүртгүүлэх</h2>
-        </div>
-        <button class="icon-button" type="button" data-close-account aria-label="Account хаах">×</button>
-      </div>
-      <div class="account-status" data-account-status>
-        <p class="cart-note">Account үүсгээд захиалга бүртгүүлэх, admin эрхтэй бол удирдлагын хэсэг рүү орох боломжтой.</p>
-      </div>
-      <div class="account-tabs" role="tablist" aria-label="Account action">
-        <button class="is-active" type="button" data-account-tab="login">Нэвтрэх</button>
-        <button type="button" data-account-tab="register">Бүртгүүлэх</button>
-      </div>
-      <form class="account-form" data-login-form>
-        <label>
-          Email
-          <input name="email" type="email" placeholder="you@example.com" required>
-        </label>
-        <label>
-          Нууц үг
-          <input name="password" type="password" placeholder="Нууц үг" required>
-        </label>
-        <button class="primary-action full-width" type="submit">Нэвтрэх</button>
-      </form>
-      <form class="account-form is-hidden" data-register-form>
-        <label>
-          Нэр
-          <input name="name" type="text" placeholder="Таны нэр" required>
-        </label>
-        <label>
-          Email
-          <input name="email" type="email" placeholder="you@example.com" required>
-        </label>
-        <label>
-          Нууц үг
-          <input name="password" type="password" placeholder="Доод тал нь 6 тэмдэгт" minlength="6" required>
-        </label>
-        <label>
-          Нууц үг давтах
-          <input name="confirmPassword" type="password" placeholder="Нууц үгээ дахин оруулна" minlength="6" required>
-        </label>
-        <button class="primary-action full-width" type="submit">Account үүсгэх</button>
-      </form>
-      <button class="secondary-action full-width is-hidden" type="button" data-logout>Гарах</button>
-      <a class="primary-action full-width is-hidden" href="/admin.html" data-account-admin-link>Admin Panel рүү орох</a>
-      <section class="account-orders is-hidden" data-account-orders-panel>
-        <div class="account-orders-head">
-          <strong>Миний захиалгууд</strong>
-          <button class="secondary-action compact-action" type="button" data-refresh-my-orders>Шинэчлэх</button>
-        </div>
-        <div class="account-order-list" data-account-orders></div>
-      </section>
     </div>
   </aside>
 
