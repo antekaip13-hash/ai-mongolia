@@ -93,6 +93,9 @@ const searchInput = document.querySelector("[data-search]");
 const themeButtons = document.querySelectorAll("[data-theme-option]");
 const toast = document.querySelector("[data-toast]");
 const heroSpotlight = document.querySelector("[data-hero-spotlight]");
+const viewSections = document.querySelectorAll("[data-view-section]");
+const viewLinks = document.querySelectorAll("[data-view-link]");
+const productDetail = document.querySelector("[data-product-detail]");
 const accountDrawer = document.querySelector("[data-account-drawer]");
 const accountStatus = document.querySelector("[data-account-status]");
 const accountButton = document.querySelector("[data-open-account]");
@@ -125,6 +128,8 @@ const IDEAS_STORAGE_KEY = "ai-mongolia-ideas-v2";
 const THEME_STORAGE_KEY = "ai-mongolia-theme";
 const AUTH_STORAGE_KEY = "ai-mongolia-auth";
 let activeFilter = "all";
+let activeView = "products";
+let selectedProductId = "design-video-bundle";
 let cart = loadCart();
 let activePromoCode = loadPromoCode();
 let activeTheme = loadTheme();
@@ -306,7 +311,9 @@ function setTheme(theme) {
   activeTheme = theme;
   document.body.dataset.theme = theme;
   themeButtons.forEach((button) => {
-    button.classList.toggle("is-active", button.dataset.themeOption === theme);
+    const isActive = button.dataset.themeOption === theme;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
   });
   saveTheme(theme);
 }
@@ -319,6 +326,14 @@ function showToast(message) {
   toastTimer = window.setTimeout(() => {
     toast.classList.remove("is-visible");
   }, 2400);
+}
+
+function popElement(element) {
+  if (!element) return;
+  element.classList.remove("is-popping");
+  void element.offsetWidth;
+  element.classList.add("is-popping");
+  window.setTimeout(() => element.classList.remove("is-popping"), 280);
 }
 
 function loadAuth() {
@@ -539,6 +554,81 @@ function makeFallbackOrder(payload) {
   };
 }
 
+function normalizeView(value) {
+  const view = String(value || "").replace("#", "").trim();
+  if (view === "shop") return "products";
+  if (view === "contact") return "checkout";
+  return ["products", "engine", "payment", "brainstorm", "checkout"].includes(view) ? view : "products";
+}
+
+function showView(view, options = {}) {
+  activeView = normalizeView(view);
+
+  viewSections.forEach((section) => {
+    section.hidden = section.dataset.viewSection !== activeView;
+  });
+
+  viewLinks.forEach((link) => {
+    link.classList.toggle("is-active", link.dataset.viewLink === activeView);
+  });
+
+  if (options.updateHash !== false) {
+    history.replaceState(null, "", `#${activeView}`);
+  }
+
+  if (options.scroll !== false) {
+    const target = document.querySelector(`[data-view-section="${activeView}"]`);
+    target?.scrollIntoView({ behavior: options.instant ? "auto" : "smooth", block: "start" });
+  }
+}
+
+function productUseCase(product) {
+  const category = product.category;
+  if (category === "Design") return "Сошиал пост, presentation, poster болон brand өнгө загвараа нэг түвшинд барихад тохиромжтой.";
+  if (category === "Video") return "Reels, TikTok, богино видео, thumbnail, subtitle зэрэг creator ажлыг хурдан хийхэд тохиромжтой.";
+  if (category === "AI Tools") return "Caption, зарын текст, content санаа, prompt workflow хэрэгтэй хэрэглэгчдэд тохиромжтой.";
+  return "Нэгээс олон хэрэгцээг хамтад нь шийдэх, үнэ хэмнэх, эхлэхэд бэлэн багц авахад тохиромжтой.";
+}
+
+function renderProductDetail(product) {
+  if (!productDetail || !product) return;
+  const merch = product.merch || {};
+  productDetail.innerHTML = `
+    <div class="detail-copy">
+      <span class="status-pill">${escapeHtml(merch.label || product.category)}</span>
+      <h3>${escapeHtml(product.name)}</h3>
+      <p>${escapeHtml(product.description)}</p>
+      <div class="detail-price-line">
+        ${merch.originalPrice ? `<small>${money(merch.originalPrice)}</small>` : ""}
+        <strong>${money(product.price)}</strong>
+        ${merch.salePercent ? `<em>${merch.salePercent}% OFF</em>` : ""}
+      </div>
+    </div>
+    <div class="detail-grid">
+      <div>
+        <span>Юунд тохирох вэ?</span>
+        <p>${escapeHtml(productUseCase(product))}</p>
+      </div>
+      <div>
+        <span>Хугацаа / төрөл</span>
+        <p>${escapeHtml(product.term || product.category)} · ${escapeHtml(product.stock || "Идэвхжүүлэлт")}</p>
+      </div>
+      <div>
+        <span>Багцад багтах зүйлс</span>
+        <ul>${(product.benefits || []).map((benefit) => `<li>${escapeHtml(benefit)}</li>`).join("")}</ul>
+      </div>
+      <div>
+        <span>Захиалгын дараа</span>
+        <p>Order ID үүсээд, төлбөр баталгаажсаны дараа account хэсэгт login/password харагдана.</p>
+      </div>
+    </div>
+    <div class="detail-actions">
+      <button class="primary-action" type="button" data-add="${escapeHtml(product.id)}">Сагсанд нэмэх</button>
+      <button class="secondary-action" type="button" data-buy-now="${escapeHtml(product.id)}">Сагсанд нэмээд захиалах</button>
+    </div>
+  `;
+}
+
 function renderProducts() {
   const searchTerm = searchInput.value.trim().toLowerCase();
   const visibleProducts = products.map(withProductMerch).filter((product) => {
@@ -550,11 +640,17 @@ function renderProducts() {
 
   if (!visibleProducts.length) {
     grid.innerHTML = '<p class="cart-note">Таны хайлтад тохирох subscription олдсонгүй.</p>';
+    if (productDetail) productDetail.hidden = true;
     return;
   }
 
+  if (!visibleProducts.some((product) => product.id === selectedProductId)) {
+    selectedProductId = visibleProducts[0].id;
+  }
+  if (productDetail) productDetail.hidden = false;
+
   grid.innerHTML = visibleProducts.map((product) => `
-    <article class="product-card ${product.merch?.salePercent ? "has-sale" : ""}">
+    <article class="product-card ${product.merch?.salePercent ? "has-sale" : ""} ${product.id === selectedProductId ? "is-selected" : ""}">
       <div class="product-thumb" style="--thumb-bg: ${safeProductColor(product.color)}">
         ${product.merch?.label ? `<span class="product-sale-chip">${escapeHtml(product.merch.label)}</span>` : ""}
         ${safeImageUrl(product.image)
@@ -573,7 +669,7 @@ function renderProducts() {
         <h3>${escapeHtml(product.name)}</h3>
         <p>${escapeHtml(product.description)}</p>
         <ul class="product-benefits">
-          ${(product.benefits || []).map((benefit) => `<li>${escapeHtml(benefit)}</li>`).join("")}
+          ${(product.benefits || []).slice(0, 2).map((benefit) => `<li>${escapeHtml(benefit)}</li>`).join("")}
         </ul>
         <div class="rating" aria-label="${escapeHtml(product.rating)} үнэлгээ">
           <span>★ ${escapeHtml(product.rating)}</span>
@@ -581,11 +677,16 @@ function renderProducts() {
         </div>
         <div class="product-foot">
           <span class="stock">Цахимаар хүргэнэ</span>
-          <button class="add-button" type="button" data-add="${escapeHtml(product.id)}">Сагслах</button>
+          <div class="product-actions">
+            <button class="detail-button" type="button" data-detail="${escapeHtml(product.id)}">Дэлгэрэнгүй</button>
+            <button class="add-button" type="button" data-add="${escapeHtml(product.id)}">Сагслах</button>
+          </div>
         </div>
       </div>
     </article>
   `).join("");
+
+  renderProductDetail(visibleProducts.find((product) => product.id === selectedProductId) || visibleProducts[0]);
 }
 
 function renderHeroSpotlight() {
@@ -806,7 +907,7 @@ function goToCheckout() {
 
   closeCart();
   prefillOrderForm();
-  document.querySelector("#contact").scrollIntoView({ behavior: "smooth" });
+  showView("checkout");
   orderForm?.elements.name?.focus({ preventScroll: true });
 }
 
@@ -968,13 +1069,60 @@ async function loadStarterIdeas() {
 }
 
 grid.addEventListener("click", (event) => {
+  const detailButton = event.target.closest("[data-detail]");
+  if (detailButton) {
+    popElement(detailButton.closest(".product-card") || detailButton);
+    selectedProductId = detailButton.dataset.detail;
+    renderProducts();
+    productDetail?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    return;
+  }
+
   const button = event.target.closest("[data-add]");
-  if (button) addToCart(button.dataset.add);
+  if (button) {
+    popElement(button.closest(".product-card") || button);
+    addToCart(button.dataset.add);
+  }
+});
+
+productDetail?.addEventListener("click", (event) => {
+  const buyNow = event.target.closest("[data-buy-now]");
+  if (buyNow) {
+    popElement(buyNow);
+    if (!cart.some((item) => item.id === buyNow.dataset.buyNow)) {
+      addToCart(buyNow.dataset.buyNow);
+    }
+    goToCheckout();
+    return;
+  }
+
+  const button = event.target.closest("[data-add]");
+  if (button) {
+    popElement(button);
+    addToCart(button.dataset.add);
+  }
 });
 
 heroSpotlight?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-spotlight-add]");
-  if (button) addToCart(button.dataset.spotlightAdd);
+  if (button) {
+    popElement(heroSpotlight);
+    addToCart(button.dataset.spotlightAdd);
+  }
+});
+
+viewLinks.forEach((link) => {
+  link.addEventListener("click", (event) => {
+    const view = event.currentTarget.dataset.viewLink;
+    if (!view) return;
+    event.preventDefault();
+    popElement(event.currentTarget);
+    showView(view);
+  });
+});
+
+window.addEventListener("hashchange", () => {
+  showView(location.hash, { updateHash: false, instant: true });
 });
 
 cartItems.addEventListener("click", (event) => {
@@ -1003,14 +1151,14 @@ copyOrderIdButton?.addEventListener("click", copyOrderId);
 closeOrderModalButton?.addEventListener("click", closeOrderModal);
 continueShoppingButton?.addEventListener("click", () => {
   closeOrderModal();
-  document.querySelector("#products").scrollIntoView({ behavior: "smooth" });
+  showView("products");
 });
 
 trackModalOrderButton?.addEventListener("click", async () => {
   if (!latestOrder?.orderId) return;
   renderStatus(await checkOrderStatus(latestOrder.orderId));
   closeOrderModal();
-  document.querySelector("#engine").scrollIntoView({ behavior: "smooth" });
+  showView("engine");
 });
 
 cartDrawer.addEventListener("click", (event) => {
@@ -1091,7 +1239,7 @@ accountOrdersEl?.addEventListener("click", async (event) => {
   if (!button) return;
   renderStatus(await checkOrderStatus(button.dataset.trackAccountOrder));
   closeAccount();
-  document.querySelector("#engine").scrollIntoView({ behavior: "smooth" });
+  showView("engine");
 });
 
 filterButtons.forEach((button) => {
@@ -1104,7 +1252,10 @@ filterButtons.forEach((button) => {
 });
 
 themeButtons.forEach((button) => {
-  button.addEventListener("click", () => setTheme(button.dataset.themeOption));
+  button.addEventListener("click", () => {
+    popElement(button);
+    setTheme(button.dataset.themeOption);
+  });
 });
 
 searchInput.addEventListener("input", renderProducts);
@@ -1131,7 +1282,7 @@ orderResult.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-track-created]");
   if (!button) return;
   renderStatus(await checkOrderStatus(button.dataset.trackCreated));
-  document.querySelector("#engine").scrollIntoView({ behavior: "smooth" });
+  showView("engine");
 });
 
 document.querySelector("[data-idea-form]").addEventListener("submit", async (event) => {
@@ -1187,6 +1338,7 @@ document.querySelector("[data-order-form]").addEventListener("submit", async (ev
 
 setTheme(activeTheme);
 refreshAuth();
+showView(location.hash, { updateHash: false, scroll: false });
 loadProducts();
 renderCart();
 loadStarterIdeas();

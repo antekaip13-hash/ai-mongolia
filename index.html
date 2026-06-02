@@ -17,11 +17,11 @@
       <span class="brand-name">AI Mongolia</span>
     </a>
     <nav class="nav-links" aria-label="Үндсэн цэс">
-      <a href="#products">Бүтээгдэхүүн</a>
-      <a href="#engine">Зөвлөх</a>
-      <a href="#payment">Төлбөр</a>
-      <a href="#brainstorm">Санал</a>
-      <a href="#contact">Холбоо</a>
+      <a href="#products" data-view-link="products">Бүтээгдэхүүн</a>
+      <a href="#engine" data-view-link="engine">Зөвлөх</a>
+      <a href="#payment" data-view-link="payment">Төлбөр</a>
+      <a href="#brainstorm" data-view-link="brainstorm">Санал</a>
+      <a href="#checkout" data-view-link="checkout">Захиалга</a>
       <a href="/admin.html" data-admin-link hidden>Admin</a>
     </nav>
     <div class="header-actions">
@@ -47,8 +47,8 @@
         </h1>
         <p class="hero-text">Canva Pro, CapCut Pro болон AI багцуудыг үнэ, хугацаа, хэрэгцээгээр нь ойлгомжтой харьцуулж сонгоорой. Захиалга бүр Order ID-тэй тул төлөвөө дараа нь шалгах боломжтой.</p>
         <div class="hero-actions">
-          <a class="primary-action" href="#products">Хямдралтай багц үзэх</a>
-          <a class="secondary-action" href="#engine">Надад тохирохыг олох</a>
+          <a class="primary-action" href="#products" data-view-link="products">Хямдралтай багц үзэх</a>
+          <a class="secondary-action" href="#engine" data-view-link="engine">Надад тохирохыг олох</a>
         </div>
         <div class="hero-proof" aria-label="AI Mongolia үйлчилгээний давуу тал">
           <span><strong>Sale</strong> онцлох багц</span>
@@ -81,7 +81,35 @@
       </div>
     </section>
 
-    <section class="section-shell products-section" id="products">
+    <section class="page-hub" aria-label="AI Mongolia хэсгүүд">
+      <button class="hub-card is-active" type="button" data-view-link="products">
+        <span>01</span>
+        <strong>Дэлгүүр</strong>
+        <small>Бараа, үнэ, хугацаа, sale багцууд</small>
+      </button>
+      <button class="hub-card" type="button" data-view-link="engine">
+        <span>02</span>
+        <strong>Зөвлөх</strong>
+        <small>Хэрэгцээгээр багц санал болгох</small>
+      </button>
+      <button class="hub-card" type="button" data-view-link="payment">
+        <span>03</span>
+        <strong>Төлбөр</strong>
+        <small>QPay болон баталгаажуулах урсгал</small>
+      </button>
+      <button class="hub-card" type="button" data-view-link="brainstorm">
+        <span>04</span>
+        <strong>Санал</strong>
+        <small>Дараагийн product санаа цуглуулах</small>
+      </button>
+      <button class="hub-card" type="button" data-view-link="checkout">
+        <span>05</span>
+        <strong>Захиалга</strong>
+        <small>Сагсаа баталгаажуулж Order ID авах</small>
+      </button>
+    </section>
+
+    <section class="section-shell products-section view-section" id="products" data-view-section="products">
       <div class="section-heading-row">
         <div class="section-heading">
           <p class="eyebrow">Багцууд</p>
@@ -101,9 +129,16 @@
         <button class="filter-button" type="button" data-filter="Bundle">Bundle</button>
       </div>
       <div class="product-grid" data-product-grid></div>
+      <div class="product-detail-panel" data-product-detail>
+        <div>
+          <span class="status-pill">Дэлгэрэнгүй</span>
+          <h3>Бүтээгдэхүүн сонгоно уу</h3>
+          <p>Карт дээрх “Дэлгэрэнгүй” товчийг дарвал үнэ, хугацаа, авах зүйлс, тохирох хэрэглээ энд гарна.</p>
+        </div>
+      </div>
     </section>
 
-    <section class="engine-section" id="engine">
+    <section class="engine-section view-section" id="engine" data-view-section="engine" hidden>
       <div class="section-heading">
         <p class="eyebrow">Ухаалаг зөвлөх</p>
         <h2>Танд тохирох багцыг хурдан олъё</h2>
@@ -169,7 +204,7 @@
       </div>
     </section>
 
-    <section class="payment-section" id="payment">
+    <section class="payment-section view-section" id="payment" data-view-section="payment" hidden>
       <div class="payment-panel">
         <div>
           <p class="eyebrow">Төлбөрийн урсгал</p>
@@ -185,7 +220,7 @@
       </div>
     </section>
 
-    <section class="brainstorm-section" id="brainstorm">
+    <section class="brainstorm-section view-section" id="brainstorm" data-view-section="brainstorm" hidden>
       <div class="section-heading">
         <p class="eyebrow">Хэрэглэгчийн санал</p>
         <h2>Хүмүүсээс дараагийн санаагаа цуглуулъя</h2>
@@ -213,7 +248,7 @@
       </div>
     </section>
 
-    <section class="contact-section" id="contact">
+    <section class="contact-section view-section" id="checkout" data-view-section="checkout" hidden>
       <div class="contact-copy">
         <p class="eyebrow">Захиалга</p>
         <h2>Digital захиалгаа бүртгүүлээрэй</h2>
@@ -352,8 +387,12 @@
   </aside>
 
   <div class="shift-switch" role="group" aria-label="Дэлгэцийн горим сонгох">
-    <button class="is-active" type="button" data-theme-option="day">Day Shift</button>
-    <button type="button" data-theme-option="night">Night Shift</button>
+    <button class="is-active" type="button" data-theme-option="day" aria-label="Day theme" title="Day theme">
+      <span class="theme-icon theme-icon-day" aria-hidden="true"></span>
+    </button>
+    <button type="button" data-theme-option="night" aria-label="Night theme" title="Night theme">
+      <span class="theme-icon theme-icon-night" aria-hidden="true"></span>
+    </button>
   </div>
 
   <button class="mobile-cart-bar" type="button" data-open-cart>
